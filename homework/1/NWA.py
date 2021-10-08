@@ -1,6 +1,5 @@
-#!/Library/Frameworks/Python.framework/Versions/3.8/bin/python3
-
 import sys
+import urllib.request
 
 # used for backtracing alignment; holds backtraced node and direction of node
 class Node:
@@ -26,18 +25,43 @@ class Node:
 # holds BLOSUM62 matrix
 class Blosum:
     def __init__(self):
-        file = open("blosum.txt");
-        letters = file.readline();
-        letters = letters.split();
+        # this is kinda gross but I kept getting certificate errors if I tried reading
+            # directly from the website. my apologies
+        matrix = "   A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X  * \n\
+A  4 -1 -2 -2  0 -1 -1  0 -2 -1 -1 -1 -1 -2 -1  1  0 -3 -2  0 -2 -1  0 -4 \n\
+R -1  5  0 -2 -3  1  0 -2  0 -3 -2  2 -1 -3 -2 -1 -1 -3 -2 -3 -1  0 -1 -4 \n\
+N -2  0  6  1 -3  0  0  0  1 -3 -3  0 -2 -3 -2  1  0 -4 -2 -3  3  0 -1 -4 \n\
+D -2 -2  1  6 -3  0  2 -1 -1 -3 -4 -1 -3 -3 -1  0 -1 -4 -3 -3  4  1 -1 -4 \n\
+C  0 -3 -3 -3  9 -3 -4 -3 -3 -1 -1 -3 -1 -2 -3 -1 -1 -2 -2 -1 -3 -3 -2 -4 \n\
+Q -1  1  0  0 -3  5  2 -2  0 -3 -2  1  0 -3 -1  0 -1 -2 -1 -2  0  3 -1 -4 \n\
+E -1  0  0  2 -4  2  5 -2  0 -3 -3  1 -2 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4 \n\
+G  0 -2  0 -1 -3 -2 -2  6 -2 -4 -4 -2 -3 -3 -2  0 -2 -2 -3 -3 -1 -2 -1 -4 \n\
+H -2  0  1 -1 -3  0  0 -2  8 -3 -3 -1 -2 -1 -2 -1 -2 -2  2 -3  0  0 -1 -4 \n\
+I -1 -3 -3 -3 -1 -3 -3 -4 -3  4  2 -3  1  0 -3 -2 -1 -3 -1  3 -3 -3 -1 -4 \n\
+L -1 -2 -3 -4 -1 -2 -3 -4 -3  2  4 -2  2  0 -3 -2 -1 -2 -1  1 -4 -3 -1 -4 \n\
+K -1  2  0 -1 -3  1  1 -2 -1 -3 -2  5 -1 -3 -1  0 -1 -3 -2 -2  0  1 -1 -4 \n\
+M -1 -1 -2 -3 -1  0 -2 -3 -2  1  2 -1  5  0 -2 -1 -1 -1 -1  1 -3 -1 -1 -4 \n\
+F -2 -3 -3 -3 -2 -3 -3 -3 -1  0  0 -3  0  6 -4 -2 -2  1  3 -1 -3 -3 -1 -4 \n\
+P -1 -2 -2 -1 -3 -1 -1 -2 -2 -3 -3 -1 -2 -4  7 -1 -1 -4 -3 -2 -2 -1 -2 -4 \n\
+S  1 -1  1  0 -1  0  0  0 -1 -2 -2  0 -1 -2 -1  4  1 -3 -2 -2  0  0  0 -4 \n\
+T  0 -1  0 -1 -1 -1 -1 -2 -2 -1 -1 -1 -1 -2 -1  1  5 -2 -2  0 -1 -1  0 -4 \n\
+W -3 -3 -4 -4 -2 -2 -3 -2 -2 -3 -2 -3 -1  1 -4 -3 -2 11  2 -3 -4 -3 -2 -4 \n\
+Y -2 -2 -2 -3 -2 -1 -2 -3  2 -1 -1 -2 -1  3 -3 -2 -2  2  7 -1 -3 -2 -1 -4 \n\
+V  0 -3 -3 -3 -1 -2 -2 -3 -3  3  1 -2  1 -1 -2 -2  0 -3 -1  4 -3 -2 -1 -4 \n\
+B -2 -1  3  4 -3  0  1 -1  0 -3 -4  0 -3 -3 -2  0 -1 -4 -3 -3  4  1 -1 -4 \n\
+Z -1  0  0  1 -3  3  4 -2  0 -3 -3  1 -1 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4 \n\
+X  0 -1 -1 -1 -2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -2  0  0 -2 -1 -1 -1 -1 -1 -4 \n\
+* -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4  1" 
+
+        lines = matrix.split("\n");
+        letters = lines[0].strip().split();
         numbers = [];
-        line= file.readline();
-        while line != "":
-            numbers.append(line.split()[1:]);
-            line = file.readline();
+        for i in range (1, len(lines)):
+             numbers.append(lines[i].strip().split()[1:]);
 
         self.letters = letters;
         self.numbers = numbers;
-
+        
     # look up score from matrix
     def score(self, xi, yj):
         i = self.letters.index(xi.upper());
@@ -47,7 +71,7 @@ class Blosum:
 
 # class for actual sequence alignment
 class Alignment:
-    def __init__(self, file1, file2, matches=None):
+    def __init__(self, file1, file2, gap, mismatch, matches):
         self.seq1 = open(file1);
         self.seq1.readline();
         self.seq1 = self.seq1.readline().strip();
@@ -61,10 +85,8 @@ class Alignment:
 
         self.blosum = Blosum();
         self.match = 1;
-##        self.mismatch = -3;
-##        self.gap = -2;
-        self.mismatch = -1;
-        self.gap = -1;
+        self.mismatch = mismatch;
+        self.gap = gap;
         
         self.scores = [[0] * (len(self.seq1)+1) for i in range(len(self.seq2)+1)];
         for i in range (0, len(self.scores)):  # not sure how to do this more elegantly
@@ -172,14 +194,45 @@ class Alignment:
 
         print(nseq1);
         print(nseq2);
+        return nseq1, nseq2;
+
+##    def anchored_nwa(self, score_func):
+##        file = open(self.matches);
+####        line = file.readline();
+##        segments = [];
+####        while (line != "" and line != "\n"):
+####            split = line.split();
+####            print(split);
+####            line = file.readline();
+##        for line in file:
+##            split = line.split();
+##            print(int(split[1]));
+##            nseq1 = self.seq1[int(split[0]) - 1 : int(split[1])];
+##            print(nseq1)
+##
+##        print(segments)
+
 
 # main
 if __name__ == '__main__':
-    _, seq1, seq2 = sys.argv
+    if (len(sys.argv) == 3):
+        _, seq1, seq2 = sys.argv
+        matchfile = None;
+    elif (len(sys.argv) == 4):
+        _, seq1, seq2, matchfile = sys.argv
+    else:
+        print("Wrong number of arguments.")
+        exit(-1);
+        
     print(seq1)
     print(seq2)
 
-    a = Alignment(seq1, seq2)
-    a.needleman_wunsch("basic");
+    a = Alignment(seq1, seq2, -5, -3, matchfile)
+##    if (matchfile == None):
+##        a.needleman_wunsch("basic");
+##    else:
+##        a.anchored_nwa("basic");
+    a.needleman_wunsch("blosum");
+        
     a.print_alignment();
     
