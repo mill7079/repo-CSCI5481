@@ -2,7 +2,8 @@
 
 import sys
 
-class Node:  # used for backtracing alignment
+# used for backtracing alignment; holds backtraced node and direction of node
+class Node:
     def __init__(self):
         self.score = 0;
         self.back_ptr = None;
@@ -37,6 +38,7 @@ class Blosum:
         self.letters = letters;
         self.numbers = numbers;
 
+    # look up score from matrix
     def score(self, xi, yj):
         i = self.letters.index(xi.upper());
         j = self.letters.index(yj.upper());
@@ -54,8 +56,8 @@ class Alignment:
         self.seq2.readline();
         self.seq2 = self.seq2.readline().strip();
 
-        print(self.seq1);
-        print(self.seq2);
+##        print(self.seq1);
+##        print(self.seq2);
 
         self.blosum = Blosum();
         self.match = 1;
@@ -79,23 +81,11 @@ class Alignment:
         self.align_seq1 = "";
         self.align_seq2 = "";
 
+    # basic scoring function
     def similar(self, xi, yj):
         if xi == yj:
             return self.match;  # match
         return self.mismatch;  # mismatch
-
-    # returns list of max values given three
-##    def max_values(self, a, b, c):
-##        ret = [];
-##        m = max(a, b, c);
-##        if (m == a):
-##            ret.append(a);
-##        if (m == b):
-##            ret.append(b);
-##        if (m == c):
-##            ret.append(c);
-##
-##        return ret;
 
     # nodelist is list of max calc score prevnodes with directions
     def max_node(self, nodelist):
@@ -108,33 +98,14 @@ class Alignment:
 
         return pair;
         
-
+    # calculate score for a node and link the previous node for alignment
     def find_max(self, r, c, score_func):
         case1 = self.scores[r-1][c-1].score + score_func(self.seq1[c-1], self.seq2[r-1]);
         case2 = self.scores[r-1][c].score + self.gap;
         case3 = self.scores[r][c-1].score + self.gap;
         sc = max(case1, case2, case3);
-##        numvals = len(self.max_values(case1, case2, case3))
 
-        # god this is gross my apologies
-##        if numvals == 1:
-##            if sc == case1:
-##                self.scores[r][c].link(self.scores[r-1][c-1], "D");
-##            elif sc == case2:
-##                self.scores[r][c].link(self.scores[r-1][c], "U");
-##            else:
-##                self.scores[r][c].link(self.scores[r][c-1], "L");
-##        else:
-##            nodelist = [];
-##            if sc == case1:
-##                nodelist.append([self.scores[r-1][c-1],"D"]);
-##            if sc == case2:
-##                nodelist.append([self.scores[r-1][c], "U"]);
-##            if sc == case3:
-##                nodelist.append([self.scores[r][c-1], "L"]);
-##
-##            mnode = self.max_node(nodelist)
-##            self.scores[r][c].link(mnode[0], mnode[1]);
+        # add all to list with their directions
         nodelist = [];
         if sc == case1:
             nodelist.append([self.scores[r-1][c-1],"D"]);
@@ -143,6 +114,8 @@ class Alignment:
         if sc == case3:
             nodelist.append([self.scores[r][c-1], "L"]);
 
+        # if only one max calculated score, use that for backtrace
+        # otherwise find max of original values of max calc score nodes
         if (len(nodelist) == 1):
             self.scores[r][c].link(nodelist[0][0], nodelist[0][1]);
         else:
@@ -151,12 +124,14 @@ class Alignment:
 
         return sc;
 
+    # print score table in a reasonable format
     def print_scores(self):
         for row in self.scores:
             for node in row:
                 print(node, end="");
             print("\n");
 
+    # implement algorithm and print the score table
     def needleman_wunsch(self, score_func):
         if (score_func == "basic"):
             score_func = self.similar;
@@ -169,6 +144,7 @@ class Alignment:
 
         self.print_scores();
 
+    # print the final alignment
     def print_alignment(self):
         s1 = len(self.seq1) - 1;
         s2 = len(self.seq2) - 1;
@@ -176,6 +152,7 @@ class Alignment:
         nseq2 = "";
         temp = self.scores[-1][-1];
 
+        # backtrace
         while (temp != None):
             if (temp.dir == "D"):
                 nseq1 = self.seq1[s1] + nseq1;
@@ -195,115 +172,8 @@ class Alignment:
 
         print(nseq1);
         print(nseq2);
-        
-# print scores
-##def print_scores(matrix):
-##    for row in matrix:
-##        for node in row:
-##            print(node, end="");
-##        print("\n",);
-    
 
-# returns score matrix
-##def needleman_wunsch(seq1, seq2, match, gap, mismatch):
-##    def s(xi, yj):
-##        if xi == yj:
-##            return match;
-##        return mismatch;
-##
-##    def find_max(matrix, r, c):
-##        # find score
-##        case1 = matrix[r-1][c-1].score + s(seq1[c-1], seq2[r-1]);
-##        case2 = matrix[r-1][c].score + gap;
-##        case3 = matrix[r][c-1].score+ gap;
-##        sc = max(case1, case2, case3);
-##
-##        # set link
-##        if sc == case1:
-##            matrix[r][c].link(matrix[r-1][c-1], "D");
-##        elif sc == case2:
-##            matrix[r][c].link(matrix[r-1][c], "U");
-##        else:
-##            matrix[r][c].link(matrix[r][c-1], "L");
-##
-##        return sc;
-##        
-##    # first is cols, second is rows - seq1 across top (cols), seq2 down side (rows)
-##    score = [[0] * (len(seq1)+1) for i in range(len(seq2)+1)]
-##    for i in range (0, len(score)):  # not sure how to do this more elegantly
-##        for j in range (0, len(score[0])):
-##            score[i][j] = Node();
-##    
-##    # initialize
-##    for i in range (0, len(score[0])):
-##        score[0][i].set_score(i * gap);
-##
-##    for j in range (0, len(score)):
-##        score[j][0].set_score(j * gap);
-##
-##    # main iteration
-##    for r in range (1, len(score)):  # r -> s2
-##        for c in range (1, len(score[r])):  # c -> s1
-##            score[r][c].set_score(find_max(score, r, c));
-##
-##    print_scores(score);
-##
-##    # find alignment
-##    s1 = len(seq1) - 1;
-##    s2 = len(seq2) - 1;
-##    nseq1 = "";
-##    nseq2 = "";
-##    temp = score[-1][-1];
-##
-##    while (temp != None):
-##        print(temp);
-##        if (temp.dir == "D"):
-##            nseq1 = seq1[s1] + nseq1;
-##            nseq2 = seq2[s2] + nseq2;
-##            s1-=1; 
-##            s2-=1;
-##        elif temp.dir == "U":
-##            nseq1 = "-" + nseq1;
-##            nseq2 = seq2[s2] + nseq2;
-##            s2-=1;
-##        elif temp.dir == "L":
-##            nseq1 = seq1[s1] + nseq1;
-##            nseq2 = "-" + nseq2; 
-##            s1-=1;
-##            
-##        temp = temp.trace();
-##
-##    print(nseq1);
-##    print(nseq2);
-##    print(len(nseq1));
-##    print(len(nseq2));
-##    print(len(seq1));
-##    print(len(seq2));
-    
-##x = Node();
-##y = Node();
-##z = Node();
-##
-##x.set_score(1);
-##y.set_score(2);
-##z.set_score(3);
-##
-##y.link(x);
-##z.link(y);
-##
-##temp = z;
-##while (temp != None):
-##    print(temp.score);
-##    temp = temp.trace();
-
-        
-##d2 = [[1,2],[2,3],[3,4]]
-##print_scores(d2);
-
-##match = 1;
-##gap = -2;
-##mismatch = -3;
-
+# main
 if __name__ == '__main__':
     _, seq1, seq2 = sys.argv
     print(seq1)
@@ -312,21 +182,4 @@ if __name__ == '__main__':
     a = Alignment(seq1, seq2)
     a.needleman_wunsch("basic");
     a.print_alignment();
-
-##    print(a.max_values(1, 2, 3));
-##    print(a.max_values(1, 3, 3));
-##    print(a.max_values(3,3,3));
-#0 11 3
-##    b = Blosum();
-##    print(b.score("A","V"));
-##    print(b.score("W","W"));
-##    print(b.score("B","N"));
-
-##    seq1 = open(seq1);
-##    seq2 = open(seq2);
-##    seq1.readline();
-##    seq2.readline();
-##
-##    needleman_wunsch(seq1.read(), seq2.read(), match, gap, mismatch);
-##    needleman_wunsch("aaagaattca", "aaatca", match, -1, -1);
     
