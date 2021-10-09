@@ -7,9 +7,10 @@ if __name__ == '__main__':
     
     sys.path.append(".");
     align = Alignment(file1, file2, -5, -1, None);
-    align.needleman_wunsch("blosum");
+    score = align.needleman_wunsch("blosum");
     s1, s2 = align.print_alignment();
 
     print(s1);
     print(s2);
+    print("Score:", score);
 

@@ -11,10 +11,11 @@ if __name__ == '__main__':
     
     sys.path.append(".");
     align = Alignment(file1, file2, -5, -1, matchfile);
-    s1, s2 = align.anchored_nwa("blosum");
+    s1, s2, score = align.anchored_nwa("blosum");
 ##    result = align.print_alignment();
 
     print(s1)
     print(s2)
+    print("Score:", score);
 ##    print(result[0])
 ##    print(result[1])

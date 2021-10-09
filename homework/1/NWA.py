@@ -88,9 +88,6 @@ class Alignment:
         self.seq2 = temp2;
 ##        self.seq2 = self.seq2.read().strip();
 
-##        print(self.seq1);
-##        print(self.seq2);
-
         self.blosum = Blosum();
         self.match = 1;
         self.mismatch = mismatch;
@@ -161,7 +158,7 @@ class Alignment:
                 print(node, end="");
             print("\n");
 
-    # implement algorithm
+    # implement algorithm; return score as bottom right index of score table
     def needleman_wunsch(self, score_func):
         if (score_func == "basic"):
             score_func = self.similar;
@@ -173,6 +170,7 @@ class Alignment:
                 self.scores[r][c].set_score(self.find_max(r, c, score_func));
 
 ##        self.print_scores();
+        return self.scores[-1][-1].score
 
     # print the final alignment
     def print_alignment(self):
@@ -227,6 +225,7 @@ class Alignment:
 
         aseq1 = "";
         aseq2 = "";
+        final_score = 0;
         for pair in segments:
             # ok I'll admit this was Not the best way to implement this but it's too late to change it
             # yikes
@@ -244,14 +243,16 @@ class Alignment:
 
             for j in range (0, len(self.scores[0])):
                 self.scores[0][j].set_score(j * self.gap);
-            
-            self.needleman_wunsch(score_func);
+                
+            # i guess you just add these?? probably implemented this wrong whoops
+            score = self.needleman_wunsch(score_func);
+            final_score += score
             
             s1, s2 = self.print_alignment();
             aseq1 += s1;
             aseq2 += s2;
             
-        return aseq1, aseq2;
+        return aseq1, aseq2, final_score;
 
 # main
 if __name__ == '__main__':
@@ -262,9 +263,10 @@ if __name__ == '__main__':
         exit(-1);
 
     a = Alignment(seq1, seq2, -2, -3, None)
-    a.needleman_wunsch("basic");
+    score = a.needleman_wunsch("basic");
         
     s1, s2 = a.print_alignment();
     print(s1);
     print(s2);
+    print("Score:", score);
     
