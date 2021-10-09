@@ -74,11 +74,19 @@ class Alignment:
     def __init__(self, file1, file2, gap, mismatch, matches):
         self.seq1 = open(file1);
         self.seq1.readline();
-        self.seq1 = self.seq1.readline().strip();
+        temp = "";
+        for line in self.seq1:
+            temp += line.strip();
+        self.seq1 = temp;
+##        self.seq1 = self.seq1.read().strip();
 
         self.seq2 = open(file2);
         self.seq2.readline();
-        self.seq2 = self.seq2.readline().strip();
+        temp2 = "";
+        for line in self.seq2:
+            temp2 += line.strip();
+        self.seq2 = temp2;
+##        self.seq2 = self.seq2.read().strip();
 
 ##        print(self.seq1);
 ##        print(self.seq2);
@@ -100,8 +108,6 @@ class Alignment:
             self.scores[0][j].set_score(j * self.gap);
 
         self.matches = matches;
-        self.align_seq1 = "";
-        self.align_seq2 = "";
 
     # basic scoring function
     def similar(self, xi, yj):
@@ -122,6 +128,8 @@ class Alignment:
         
     # calculate score for a node and link the previous node for alignment
     def find_max(self, r, c, score_func):
+##        print(r, c)
+##        print(len(self.seq1), len(self.seq2))
         case1 = self.scores[r-1][c-1].score + score_func(self.seq1[c-1], self.seq2[r-1]);
         case2 = self.scores[r-1][c].score + self.gap;
         case3 = self.scores[r][c-1].score + self.gap;
@@ -153,7 +161,7 @@ class Alignment:
                 print(node, end="");
             print("\n");
 
-    # implement algorithm and print the score table
+    # implement algorithm
     def needleman_wunsch(self, score_func):
         if (score_func == "basic"):
             score_func = self.similar;
@@ -164,7 +172,7 @@ class Alignment:
             for c in range (1, len(self.scores[r])):  # c -> s1
                 self.scores[r][c].set_score(self.find_max(r, c, score_func));
 
-        self.print_scores();
+##        self.print_scores();
 
     # print the final alignment
     def print_alignment(self):
@@ -192,26 +200,58 @@ class Alignment:
                 
             temp = temp.trace();
 
-        print(nseq1);
-        print(nseq2);
+##        print(nseq1);
+##        print(nseq2);
         return nseq1, nseq2;
 
-##    def anchored_nwa(self, score_func):
-##        file = open(self.matches);
-####        line = file.readline();
-##        segments = [];
-####        while (line != "" and line != "\n"):
-####            split = line.split();
-####            print(split);
-####            line = file.readline();
-##        for line in file:
-##            split = line.split();
-##            print(int(split[1]));
-##            nseq1 = self.seq1[int(split[0]) - 1 : int(split[1])];
-##            print(nseq1)
-##
-##        print(segments)
+    def anchored_nwa(self, score_func):
+        file = open(self.matches);
+        segments = [];
+        start_s1 = 0;
+        start_s2 = 0;
+        for line in file:
+            split = line.split();
+            
+            nseq1_intro = self.seq1[start_s1 : int(split[0]) - 1]
+            nseq1 = self.seq1[(int(split[0]) - 1) : int(split[1])];
+            start_s1 = int(split[1]);
+            
+            nseq2_intro = self.seq2[start_s2 : int(split[2]) - 1]
+            nseq2 = self.seq2[(int(split[2]) - 1) : int(split[3])];
+            start_s2 = int(split[3]);
+            
+            segments.append([nseq1_intro, nseq2_intro]);
+            segments.append([nseq1, nseq2]);
 
+        segments.append([self.seq1[start_s1:], self.seq2[start_s2:]]);
+
+        aseq1 = "";
+        aseq2 = "";
+        for pair in segments:
+            # ok I'll admit this was Not the best way to implement this but it's too late to change it
+            # yikes
+            self.seq1 = pair[0];
+            self.seq2 = pair[1];
+
+            # re-initialize scores matrix :)
+            self.scores = [[0] * (len(self.seq1)+1) for i in range(len(self.seq2)+1)];
+            for i in range (0, len(self.scores)):  # not sure how to do this more elegantly
+                for j in range (0, len(self.scores[i])):
+                    self.scores[i][j] = Node();
+                    
+            for i in range (0, len(self.scores)):  # initialize score matrix
+                self.scores[i][0].set_score(i * self.gap);
+
+            for j in range (0, len(self.scores[0])):
+                self.scores[0][j].set_score(j * self.gap);
+            
+            self.needleman_wunsch(score_func);
+            
+            s1, s2 = self.print_alignment();
+            aseq1 += s1;
+            aseq2 += s2;
+            
+        return aseq1, aseq2;
 
 # main
 if __name__ == '__main__':
@@ -223,16 +263,9 @@ if __name__ == '__main__':
     else:
         print("Wrong number of arguments.")
         exit(-1);
-        
-    print(seq1)
-    print(seq2)
 
-    a = Alignment(seq1, seq2, -5, -3, matchfile)
-##    if (matchfile == None):
-##        a.needleman_wunsch("basic");
-##    else:
-##        a.anchored_nwa("basic");
-    a.needleman_wunsch("blosum");
+    a = Alignment(seq1, seq2, -2, -3, matchfile)
+    a.needleman_wunsch("basic");
         
     a.print_alignment();
     

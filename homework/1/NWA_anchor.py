@@ -3,9 +3,18 @@ sys.path.append(".");
 from NWA import Alignment
 
 if __name__ == '__main__':
-    _, file1, file2 = sys.argv;
+    if (len(sys.argv) != 4):
+        print("Too few arguments.")
+        exit(1);
+        
+    _, file1, file2, matchfile = sys.argv;
     
     sys.path.append(".");
-    align = Alignment(file1, file2, -5, -1, None);
-    align.anchored_nwa("blosum");
-    align.print_alignment();
+    align = Alignment(file1, file2, -5, -1, matchfile);
+    s1, s2 = align.anchored_nwa("blosum");
+##    result = align.print_alignment();
+
+    print(s1)
+    print(s2)
+##    print(result[0])
+##    print(result[1])
