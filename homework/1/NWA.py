@@ -257,15 +257,14 @@ class Alignment:
 if __name__ == '__main__':
     if (len(sys.argv) == 3):
         _, seq1, seq2 = sys.argv
-        matchfile = None;
-    elif (len(sys.argv) == 4):
-        _, seq1, seq2, matchfile = sys.argv
     else:
         print("Wrong number of arguments.")
         exit(-1);
 
-    a = Alignment(seq1, seq2, -2, -3, matchfile)
+    a = Alignment(seq1, seq2, -2, -3, None)
     a.needleman_wunsch("basic");
         
-    a.print_alignment();
+    s1, s2 = a.print_alignment();
+    print(s1);
+    print(s2);
     
