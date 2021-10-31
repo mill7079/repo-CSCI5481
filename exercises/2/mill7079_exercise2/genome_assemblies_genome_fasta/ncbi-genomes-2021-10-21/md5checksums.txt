@@ -1,0 +1,1 @@
+a892cf0fc22ffc2acdb74a81d3188fb6  GCA_002859165.1_ASM285916v1_genomic.fna.gz
