@@ -1,4 +1,5 @@
 from math import log, inf
+from collections import deque
 
 
 def print_m(matrix):
@@ -32,7 +33,7 @@ class HMM:
 
     def emit(self, state, obs):
         # print(state, obs)
-        return 1 if state[0:1] == obs else 0
+        return 1 if (state[0:1] == obs or obs == 'N') else 0
 
     def viterbi(self, seq):
         seq = seq.upper()
@@ -75,10 +76,28 @@ class HMM:
                 idx = i
 
         print(self.states[idx], max_end_prob)
-        path = [ptr[idx][-1]]
+        # path = [ptr[idx][-1]]
+        # print(path)
+        # print("starting path")
+        # for i in range(len(seq) - 2, -1, -1):
+        #     if i % 250000 == 0:
+        #         print("step in path")
+        #     idx = self.states.index(path[0])
+        #     path.insert(0, ptr[idx][i])
+
+        path = deque()
+        path.append(ptr[idx][-1])
         print(path)
+        print("starting path")
         for i in range(len(seq) - 2, -1, -1):
+            if i % 250000 == 0:
+                print("step in path")
             idx = self.states.index(path[0])
             path.insert(0, ptr[idx][i])
 
-        print(path)
+        # print(path)
+        print("done with path")
+        print(len(path))
+        print(len(seq))
+        return path
+
