@@ -1,4 +1,4 @@
-from math import log
+from math import log, inf
 
 
 def print_m(matrix):
@@ -31,7 +31,7 @@ class HMM:
         return self.trans_matrix[self.states.index(sk)][self.states.index(sl)]
 
     def emit(self, state, obs):
-        print(state, obs)
+        # print(state, obs)
         return 1 if state[0:1] == obs else 0
 
     def viterbi(self, seq):
@@ -40,7 +40,7 @@ class HMM:
         ptr = [['']*len(seq) for _ in range(len(self.states))]
         # initialization
         for i in range(0, len(self.states)):
-            v[i][0] = 1/len(self.states)
+            v[i][0] = log(1/len(self.states))
 
         # print(v)
         # iteration
@@ -48,23 +48,26 @@ class HMM:
             # print(seq[i])
             for j in range(0, len(self.states)):
                 argmax = ''
-                max_prob = 0
+                max_prob = -inf
                 emission = self.emit(self.states[j], seq[i])
                 for k in range(0, len(self.states)):
-                    prob = v[k][i-1] * self.transit(self.states[k], self.states[j])
+                    # prob = v[k][i-1] * self.transit(self.states[k], self.states[j])
+                    prob = v[k][i-1] + log(self.transit(self.states[k], self.states[j]))
+                    # prob = log(v[k][i-1]) + log(self.transit(self.states[k], self.states[j]))
                     # print(k, i)
-                    # print(v[k][i-1], self.transit(self.states[k], self.states[j]), emission, prob)
+                    # if emission > 0:
+                    #     print("prev:", v[k][i-1], "log transit:", log(self.transit(self.states[k], self.states[j])), "prob:", prob)
                     if prob > max_prob:
                         max_prob = prob
                         argmax = self.states[k]
-                v[j][i] = max_prob * emission
+                v[j][i] = max_prob + (log(emission) if emission > 0 else -inf)
                 ptr[j][i] = argmax
 
-        print_m(v)
-        print_m(ptr)
+        # print_m(v)
+        # print_m(ptr)
 
         # termination - retrace
-        max_end_prob = 0
+        max_end_prob = -inf
         idx = -1
         for i in range(0, len(v)):
             if v[i][-1] > max_end_prob:
