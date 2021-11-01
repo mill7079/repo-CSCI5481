@@ -1,3 +1,4 @@
+from GeneIdentifier import identify
 from HMM import *
 from sys import argv
 
@@ -28,21 +29,52 @@ if __name__ == '__main__':
     island_count = 0
     empty_count = 0
 
-    print("CpG islands.txt longer than 200 bp:")
-    for i in range(1, len(path)):
-        if i % 100000 == 0:
-            print("step")
+    # print("CpG islands.txt longer than 200 bp:")
+    # for i in range(1, len(path)):
+    #     state = path[i]
+    #     if state == '':
+    #         empty_count += 1
+    #     else:
+    #         if state[1] == '-' and cg_count > 0:
+    #             if cg_count > 200:
+    #                 island_count += 1
+    #                 print("CpG Island " + str(island_count) + ":", cg_count, "bp (" + str(start_idx), '-', str(i) + ')')
+    #             cg_count = 0
+    #         elif state[1] == '+':
+    #             if cg_count == 0:
+    #                 start_idx = i
+    #             cg_count += 1
 
+    islands = []
+    with_gene = 0
+    for i in range(1, len(path)):
         state = path[i]
-        if state == '':
+        if state == '':  # meant for handling errors; I don't think this actually needs to be here anymore
             empty_count += 1
         else:
             if state[1] == '-' and cg_count > 0:
                 if cg_count > 200:
                     island_count += 1
-                    print("CpG Island " + str(island_count) + ":", cg_count, "bp (" + str(start_idx), '-', str(i) + ')')
+                    genes = identify(i)
+                    if len(genes) > 0:  # island has downstream gene
+                        with_gene += 1
+
+                    island = [island_count, start_idx, i, cg_count, genes]  # island num, start, end, length, genes
+                    islands.append(island)
                 cg_count = 0
             elif state[1] == '+':
                 if cg_count == 0:
                     start_idx = i
                 cg_count += 1
+
+    print("Total CpG islands found:", str(island_count)+';', with_gene, "out of", island_count,
+          "islands are followed by a coding region")
+
+    for island in islands:
+        print("CpG Island " + str(island[0]) + ":", island[3], "bp (" + str(start_idx), '-', str(i) + '),', end='')
+        if len(island[4]) > 0:
+            for gene in island[4]:
+                print(",", gene[3], "(" + gene[2] + ")", end='')
+        else:
+            print("No gene", end='')
+        print()
