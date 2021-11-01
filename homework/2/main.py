@@ -53,7 +53,7 @@ if __name__ == '__main__':
             if state[1] == '-' and cg_count > 0:
                 if cg_count > 200:
                     island_count += 1
-                    genes = identify(i)
+                    genes = identify(start_idx, i)
                     if len(genes) > 0:  # island has downstream gene
                         with_gene += 1
 
