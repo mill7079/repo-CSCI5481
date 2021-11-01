@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     islands = []
     with_gene = 0
-    
+
     # find islands and potential genes
     for i in range(1, len(path)):
         state = path[i]
@@ -70,10 +70,10 @@ if __name__ == '__main__':
 
     # print formatted islands
     for island in islands:
-        print("CpG Island " + str(island[0]) + ":", island[3], "bp (" + str(start_idx), '-', str(i) + '),', end='')
+        print("CpG Island " + str(island[0]) + ":", island[3], "bp (" + str(island[1]), '-', str(island[2]) + ')', end='')
         if len(island[4]) > 0:
             for gene in island[4]:
                 print(",", gene[3], "(" + gene[2] + ")", end='')
         else:
-            print("No gene", end='')
+            print(" No gene", end='')
         print()
