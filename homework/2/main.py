@@ -4,11 +4,6 @@ from sys import argv
 
 if __name__ == '__main__':
 
-    # print(hmm.emit('A+', 'A'))
-    # print(hmm.emit('T+', 'A'))
-    # hmm.viterbi('ATACGACA')
-    # hmm.viterbi("CGCCG")
-
     if len(argv) != 2:
         print("wrong number of arguments")
         exit(-1)
@@ -19,14 +14,15 @@ if __name__ == '__main__':
     file = open(seqfile)
     file.readline()
     seq = ''
-    for line in file:
+    for line in file:  # concatenate parts of fasta file
         seq += line.strip()
 
+    # find optimal path using viterbi algorithm
     path = hmm.viterbi(seq)
 
-    cg_count = 0
-    start_idx = 0
-    island_count = 0
+    cg_count = 0  # length of CpG island
+    start_idx = 0  # start index of CpG island
+    island_count = 0  # number of CpG islands found so far
     empty_count = 0
 
     # print("CpG islands.txt longer than 200 bp:")
@@ -47,6 +43,8 @@ if __name__ == '__main__':
 
     islands = []
     with_gene = 0
+    
+    # find islands and potential genes
     for i in range(1, len(path)):
         state = path[i]
         if state == '':  # meant for handling errors; I don't think this actually needs to be here anymore
@@ -70,6 +68,7 @@ if __name__ == '__main__':
     print("Total CpG islands found:", str(island_count)+';', with_gene, "out of", island_count,
           "islands are followed by a coding region")
 
+    # print formatted islands
     for island in islands:
         print("CpG Island " + str(island[0]) + ":", island[3], "bp (" + str(start_idx), '-', str(i) + '),', end='')
         if len(island[4]) > 0:
