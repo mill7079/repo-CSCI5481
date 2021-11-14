@@ -9,6 +9,7 @@ scoring_matrix = [[0, 3, 4, 9, 8],
                   [9, 4, 4, 0, 8],
                   [8, 8, 8, 8, 8]]
 
+
 class Node:
     def __init__(self, leaf_char=None, left=None, right=None):
         self.scores = [inf, inf, inf, inf, inf, (inf, inf), (inf, inf), (inf, inf), (inf, inf), (inf, inf)]
@@ -18,6 +19,7 @@ class Node:
 
         self.left = left
         self.right = right
+        self.char = 'z'
 
     def set_score(self, char, score):
         self.scores[alph.index(char.upper())] = score
@@ -26,10 +28,10 @@ class Node:
         self.char = alph[self.scores.index(min(self.scores))]
 
     def __str__(self):
-        return self.char, self.scores
+        return self.char + ' ' + str(self.scores) + '\n'
 
     def __repr__(self):
-        return self.char + str(self.scores) + '\n'
+        return self.char + ' ' + str(self.scores) + '\n'
 
 
 def length_check(arr):
@@ -43,8 +45,10 @@ def length_check(arr):
             return False
     return True
 
+
 def dist(a, b):
     return scoring_matrix[alph.index(a)][alph.index(b)]
+
 
 # creates trees consisting only of leaves to start with
 def create_trees(seqs):
@@ -52,11 +56,21 @@ def create_trees(seqs):
     for i in range(0, len(seqs[0])):
         tree = []
         for j in range(0, len(seqs)):
-            tree.append(Node(seqs[j][i]))
+            tree.append(Node(leaf_char=seqs[j][i]))
         trees.append(tree)
 
     # print(trees)
     return trees
+
+
+def trace_back(root):
+    root.char = alph[root.scores.index(min(root.scores[0:len(alph)]))]  # set min char on root
+
+    if root.left is not None:
+        trace_back(root.left)
+    if root.right is not None:
+        trace_back(root.right)
+
 
 # performs sankoff algorithm on given list of sequences
 def sankoff(seqs):
@@ -98,21 +112,35 @@ def sankoff(seqs):
                 parent.scores[j + len(alph)] = (trace[0], trace[1])
             tree.append(parent)
 
+    # TODO trace back down each tree
+        # set min char on root
+        # use stored trace values and left/right pointers to set chars on leaves
+    for tree in trees:
+        trace_back(tree[-1])
+        # root = tree[-1]
+        # root.char = alph[root.scores.index(min(root[0:len(alph)]))]  # set min char on root
+        #
+        # left = root.left
+        # right = root.right
+        # parent = root
+        #
+        # while left is not None and right is not None:  # set chars for other nodes
 
+    # TODO combine all trees into single tree
 
-    # final_tree = [''] * len(trees[0])
-    # for tree in trees:
-    #     for i in range(0, len(tree)):
-    #         final_tree[i] += tree[i]
-    # return final_tree
+    final_tree = [''] * len(trees[0])
+    for tree in trees:
+        for i in range(0, len(tree)):
+            # final_tree[i] += tree[i]
+            print(tree[i])
+            final_tree[i] += tree[i].char
+    return final_tree
 
 
 if __name__ == '__main__':
     print("main")
-    sequences = ['AU', 'GU', 'CG', 'CA']
-    arr = [0] * 8
-    arr[0] = 1
-    print(arr)
+    # sequences = ['AU', 'GU', 'CG', 'CA']
+    sequences = ['AUUCGUGAUU', 'AUUGAA-AUU', 'GUCCUCGGUU', 'GA-CACGAUC']
 
-    sankoff(sequences)
-    # print(sankoff(sequences))
+    # sankoff(sequences)
+    print(sankoff(sequences))
