@@ -16,10 +16,11 @@ class Node:
         if leaf_char is not None:
             self.scores[alph.index(leaf_char.upper())] = 0
             self.char = leaf_char
+        else:
+            self.char = 'z'
 
         self.left = left
         self.right = right
-        self.char = 'z'
 
     def set_score(self, char, score):
         self.scores[alph.index(char.upper())] = score
@@ -85,7 +86,11 @@ def sankoff(seqs):
     # for each tree, perform alg
     for tree in trees:
         # just for now - join each pair of seqs for next step up
-        for i in range(0, len(tree), 2):
+        # for i in range(0, len(tree), 2):
+        for i in range(0, len(tree)+1, 2):
+            print("before",len(tree))
+            print(tree[i])
+            print(tree[i+1])
             if i + 1 >= len(tree):
                 print("exit loop")
                 break
@@ -111,6 +116,7 @@ def sankoff(seqs):
                 parent.scores[j] = min_left + min_right
                 parent.scores[j + len(alph)] = (trace[0], trace[1])
             tree.append(parent)
+            print("after", len(tree))
 
     # TODO trace back down each tree
         # set min char on root
@@ -128,12 +134,15 @@ def sankoff(seqs):
 
     # TODO combine all trees into single tree
 
+    print('end:', trees[-1])
     final_tree = [''] * len(trees[0])
     for tree in trees:
         for i in range(0, len(tree)):
             # final_tree[i] += tree[i]
-            print(tree[i])
+            # print(tree[i])
             final_tree[i] += tree[i].char
+            if tree[i].char == 'z':
+                print(tree[i])
     return final_tree
 
 
