@@ -42,6 +42,9 @@ from math import inf
 #     #     trees.append(new_tree)
 #
 
+
+# read alignment file to concatenate aligned sequences if needed
+# assumes structure like the one returned from clustal omega
 def read_alignment(align_file):
     sequences = dict()
 
@@ -57,9 +60,11 @@ def read_alignment(align_file):
             else:
                 sequences[split[0]] += split[-1].strip()
 
+    file.close()
     return sequences
 
 
+# creates the individual trees for each sequence position
 def create_trees(init_tree, sequences):
     trees = dict()
     seq_len = 0
@@ -74,6 +79,7 @@ def create_trees(init_tree, sequences):
     return trees
 
 
+# creates the dictionary of nodes for each tree
 def create_nodes(tree, sequences, position):
     leaves = tree.get_terminals()
     others = tree.get_nonterminals()
@@ -89,12 +95,14 @@ def create_nodes(tree, sequences, position):
 
 
 # taken from https://biopython.org/wiki/Phylo_cookbook
-def get_parent(tree, child_clade):
-    node_path = tree.get_path(child_clade)
-    return node_path[-2]
+# unused
+# def get_parent(tree, child_clade):
+#     node_path = tree.get_path(child_clade)
+#     return node_path[-2]
 
 
 # mostly taken from sankoff.py
+# finds score matrix of parent given its children
 def score(parent, left, right):
     for i in range(0, len(alph)):  # for each letter in parent
         min_left = inf
@@ -147,25 +155,69 @@ def sankoff(tree, nodes):
                     # score(parent, nodes[children[0]], nodes[children[1]])
                     score(parent, children[0], children[1])
                     nodes_left -= 1
+                    if nodes_left == 0:  # just scored parent - find parsimony score
+                        # parsimony_score += min(parent.scores[0:len(alph)])
+                        return min(parent.scores[0:len(alph)])
+
+
+# trace scores back, setting name of clade to char for now
+def trace_back(root, nodes):
+    # root.char = alph[root.scores.index(min(root.scores[0:len(alph)]))]  # set min char on root
+    root_node = nodes[root]
+    root_node.char = alph[root_node.scores.index(min(root_node.scores[0:len(alph)]))]
+    root.name = root_node.char
+
+    for child in root:
+        trace_back(child, nodes)
+
+
+# merges chars of two trees
+def merge(tree1, tree2):
+    tree1.name += tree2.name
+
+    children1 = []
+    for child in tree1:
+        children1.append(child)
+
+    children2 = []
+    for child in tree2:
+        children2.append(child)
+
+    for i in range(0, len(children1)):
+        merge(children1[i], children2[i])
+
+
+# sums all trees to get final sequences
+def sum_trees(trees):
+    final_tree = None
+    for tree in trees:
+        if final_tree is None:
+            final_tree = copy.deepcopy(tree)
+        else:
+            merge(final_tree.clade, tree.clade)
+
+    return final_tree
 
 
 if __name__ == '__main__':
-    sequences = read_alignment('seqs/clustal.aln')  # parse alignment file into dict - fasta_name:seq
-    tree = Phylo.read("tree.dnd", "newick")  # create tree from alignment results (tree from Clustal Omega)
-    print(tree)
-
-    # for subclade in tree.clade:
-    #     print(subclade.branch_length)
-    # print(len(create_trees(tree, sequences)))
-    # print(read_alignment('seqs/clustal.aln'))
+    # sequences = read_alignment('seqs/clustal.aln')  # parse alignment file into dict - fasta_name:seq
+    # tree = Phylo.read("tree.dnd", "newick")  # create tree from alignment results (tree from Clustal Omega)
+    sequences = read_alignment('toy_align.txt')
+    tree = Phylo.read('toy.dnd', 'newick')
+    # print(tree)
 
     # run sankoff
     trees = create_trees(tree, sequences)
+    parsimony_score = 0
     for tree in trees:
-        sankoff(tree, trees[tree])
-        print(tree)
-        break
+        parsimony_score += sankoff(tree, trees[tree])
+        # trace_back(tree, trees[tree])
+        trace_back(tree.clade, trees[tree])
         # print(tree)
-        # print(trees[tree])
         # break
 
+    pars_tree = sum_trees(trees)
+    print("final tree:")
+    print(pars_tree)
+    print("score:")
+    print(parsimony_score)

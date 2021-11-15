@@ -1,0 +1,7 @@
+CLUSTAL O(1.2.3) multiple sequence alignment
+
+
+n1    AUUCGUGAUU
+n2    AUUGAA-AUU
+n3    GUCCUCGGUU
+n4    GA-CACGAUC
