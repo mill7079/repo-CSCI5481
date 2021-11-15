@@ -14,7 +14,11 @@ class Node:
     def __init__(self, leaf_char=None, left=None, right=None):
         self.scores = [inf, inf, inf, inf, inf, (inf, inf), (inf, inf), (inf, inf), (inf, inf), (inf, inf)]
         if leaf_char is not None:
-            self.scores[alph.index(leaf_char.upper())] = 0
+            try:
+                self.scores[alph.index(leaf_char.upper())] = 0
+            except ValueError:
+                # idk if i need to do anything here
+                print('n')
             self.char = leaf_char
         else:
             self.char = 'z'
@@ -148,7 +152,6 @@ def sankoff(seqs):
 
 if __name__ == '__main__':
     print("main")
-    # sequences = ['AU', 'GU', 'CG', 'CA']
     sequences = ['AUUCGUGAUU', 'AUUGAA-AUU', 'GUCCUCGGUU', 'GA-CACGAUC']
 
     # sankoff(sequences)
