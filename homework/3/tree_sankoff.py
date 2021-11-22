@@ -219,5 +219,6 @@ if __name__ == '__main__':
     pars_tree = sum_trees(trees)
     print("final tree:")
     print(pars_tree)
+    # Phylo.draw(pars_tree)
     print("score:")
     print(parsimony_score)
