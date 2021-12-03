@@ -17,14 +17,35 @@ eof = "$"
 
 
 # theoretically faster lookup
-def lf(index, bwt, offsets):
-    char = bwt[index]
-    offset = 0
-    for i in range(0, index):
-        if bwt[i] == char:
-            offset += 1
+# def lf(index, bwt, offsets):
+#     char = bwt[index]
+#     offset = 0
+#     for i in range(0, index):
+#         if bwt[i] == char:
+#             offset += 1
+#
+#     return offsets[char] + offset
 
-    return offsets[char] + offset
+# helper for reverse_bwt, fm indexing
+# finds offsets of new characters in first column
+def calc_offsets(col):
+    offsets = dict()  # stores offset of each new character
+    for j in range(0, len(col)):
+        if col[j] not in offsets:
+            offsets[col[j]] = j
+
+    return offsets
+
+
+# helper for reverse_bwt, fm indexing
+# precomputes lf array
+def calc_lf(bwt_seq, offsets):
+    lf = [0] * len(bwt_seq)
+    for j in range(0, len(bwt_seq)):
+        lf[j] = offsets[bwt_seq[j]]
+        offsets[bwt_seq[j]] += 1  # need to update offset value as you go to prevent re-searching the array
+
+    return lf
 
 
 # learning from hw2 mistakes and using a deque
@@ -67,18 +88,20 @@ def reverse_bwt(bwtSeq):
     i = 0
 
     # calculate offsets of new characters in first column
-    offsets = dict()  # stores offset of each new character
-    for j in range(0, len(first)):
-        if first[j] not in offsets:
-            offsets[first[j]] = j
+    # offsets = dict()  # stores offset of each new character
+    # for j in range(0, len(first)):
+    #     if first[j] not in offsets:
+    #         offsets[first[j]] = j
+    offsets = calc_offsets(first)
 
     # precompute lf-mapping to speed up calculations
     # because trying to reverse bwtHomoSapiens takes AGES
     # even with the theoretically faster lookup
-    lf = [0] * len(bwtSeq)
-    for j in range(0, len(bwtSeq)):
-        lf[j] = offsets[bwtSeq[j]]
-        offsets[bwtSeq[j]] += 1  # need to update offset value as you go to prevent re-searching the array
+    # lf = [0] * len(bwtSeq)
+    # for j in range(0, len(bwtSeq)):
+    #     lf[j] = offsets[bwtSeq[j]]
+    #     offsets[bwtSeq[j]] += 1  # need to update offset value as you go to prevent re-searching the array
+    lf = calc_lf(bwtSeq, offsets)
 
     while bwtSeq[i] != eof:
         # i = lf(i, bwtSeq, offsets)
@@ -86,6 +109,12 @@ def reverse_bwt(bwtSeq):
         seq = bwtSeq[i] + seq
 
     return seq[1:]
+
+
+# full fm index; keeps entire suffix array in memory
+def full_index_fm(bwt_seq):
+    seq = reverse_bwt(bwt_seq)  # original sequence
+    first = sorted(bwt_seq)  # first column of matrix
 
 
 if __name__ == '__main__':
