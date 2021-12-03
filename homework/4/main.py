@@ -193,6 +193,74 @@ def full_index_fm(bwt_seq, all_reads):
     return matches
 
 
+# hybrid fm index; keeps partial suffix array in memory
+def hybrid_fm(bwt_seq, all_reads):
+    seq, full_sa = reverse_bwt(bwt_seq)  # original sequence and suffix array
+    # only store portion of SA (but it's auto-calculated in reverse_bwt so....pretend this happened earlier)
+    sa = [0] * (len(full_sa) // 3 + 1)
+    for i in range(0, len(sa)):  # shrink by 2/3
+        sa[i] = full_sa[i*3]
+
+    first = sorted(bwt_seq)  # first column of matrix
+
+    offsets = calc_offsets(first)
+    lf = calc_lf(bwt_seq, offsets)
+
+    # calculate array of row indices
+    init_rows = []
+    for i in range(0, len(bwt_seq)):
+        init_rows.append(i)
+
+    matches = dict()
+
+    for reads in all_reads:
+        progress_count = 0
+        for read in reads:  # align each short read
+            if progress_count % 10 == 0:
+                print("progress hybrid:", progress_count, "out of", len(reads), "reads")
+            rev_read = read[1][::-1]
+            rows = init_rows  # contains row indices for currently valid rows
+
+            # while len(rows) > 1:
+            while len(rev_read) > 0:
+                char = rev_read[0]
+                rev_read = rev_read[1:]
+                temp_rows = []
+                for row in rows:  # find valid rows (row ends with next char)
+                    if bwt_seq[row] == char:
+                        temp_rows.append(row)
+
+                # map valid rows to rows in first
+                rows = []
+                for row in temp_rows:
+                    rows.append(lf[row])
+
+                if len(rows) < 1:
+                    # print("no matching rows")
+                    break
+
+            if len(rows) > 0:
+                # print("matching:", rows)
+                indices = []
+                for row in rows:
+                    r = row
+                    steps = 0
+                    while r % 3 != 0:
+                        # print(r)
+                        r = lf[r]
+                        steps += 1
+                    indices.append(sa[r // 3] + steps + chr_offset)
+
+                if read[0] in matches:
+                    matches[read[0]].append(indices)
+                else:
+                    matches[read[0]] = [indices]
+
+            progress_count += 1
+
+    return matches
+
+
 if __name__ == '__main__':
     # testing
     # print(bwt('acaacg$'))
@@ -240,24 +308,24 @@ if __name__ == '__main__':
 
 
     # third function: full index
-    # reads = [("head", "aba"), ("head2", "bba")]
-    # reads2 = [("head", "aba"), ("head2", "bba")]
-    # chr_bwt_seq = "abba$aa"
+    reads = [("head", "aba"), ("head2", "bba")]
+    reads2 = [("head", "aba"), ("head2", "bba")]
+    chr_bwt_seq = "abba$aa"
     # parse fastq files for reads
-    reads = parse_fastq("files/SRR089545_1.fq")
-    reads2 = parse_fastq("files/SRR089545_2.fq")
+    # reads = parse_fastq("files/SRR089545_1.fq")
+    # reads2 = parse_fastq("files/SRR089545_2.fq")
 
     # extract chr Y BWT
-    chry_bwt = open("files/bwtChrYnew(25M-26M).fa")
-    chry_bwt.readline()
-    chr_bwt_seq = chry_bwt.read().replace("\n", "")
+    # chry_bwt = open("files/bwtChrYnew(25M-26M).fa")
+    # chry_bwt.readline()
+    # chr_bwt_seq = chry_bwt.read().replace("\n", "")
 
     # run fm indexing
     matches = full_index_fm(chr_bwt_seq, [reads, reads2])
 
     # write matches to file
     full_out = open("files/mapping_fullindexFM.txt", "w")
-    full_out.write(str(len(matches)) + " out of " + str(len(reads)) + " short read pairs map on chrY:20M~40M:\n")
+    full_out.write(str(len(matches)) + " out of " + str(len(reads) + len(reads2)) + " short read pairs map on chrY:20M~40M:\n")
     for match in matches:
         full_out.write(match + " " + str(matches[match][0]))
         try:
@@ -267,3 +335,19 @@ if __name__ == '__main__':
         full_out.write("\n")
 
     full_out.close()
+
+
+    # fourth function: hybrid fm
+    matches = hybrid_fm(chr_bwt_seq, [reads, reads2])
+
+    hybrid_out = open("files/mapping_FMhybrid.txt", "w")
+    hybrid_out.write(str(len(matches)) + " out of " + str(len(reads) + len(reads2)) + " short read pairs map on chrY:20M~40M:\n")
+    for match in matches:
+        hybrid_out.write(match + " " + str(matches[match][0]))
+        try:
+            hybrid_out.write(" " + str(matches[match][1]))
+        except IndexError:
+            pass
+        hybrid_out.write("\n")
+
+    hybrid_out.close()

@@ -21,3 +21,15 @@ Additionally, for ease of grading, I've left the source file out in the main pro
 
 All files mentioned in the rubric are included and named appropriately; there's an additional file called
     reversedSample1.fa that's the reverse_bwt of sample1.fa for testing purposes.
+
+
+Issues:
+
+The indices in mapping_FMhybrid.txt are incorrect, but I couldn't resolve the issue (something with how the
+    indices relate between the suffix array and rows).
+
+Additionally, I was unsure how to implement the checkpoint version of FM indexing with the way in which I'm
+    performing the LF lookup - I precalculate all of the lookup values before the algorithm begins (because
+    it's slow to an ungodly degree otherwise), so each LF is already constant time (there's no counting going
+    on in the call so including checkpoints doesn't do anything). I've included the algorithm with the
+    checkpoints calculated but it functions the same as the original version.
