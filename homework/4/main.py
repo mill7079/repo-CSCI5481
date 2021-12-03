@@ -261,6 +261,90 @@ def hybrid_fm(bwt_seq, all_reads):
     return matches
 
 
+# tallies nucleotide counts at certain points to speed lf lookup
+def checkpointing_fm(bwt_seq, all_reads):
+    seq, full_sa = reverse_bwt(bwt_seq)  # original sequence and suffix array
+    # only store portion of SA (but it's auto-calculated in reverse_bwt so....pretend this happened earlier)
+    sa = [0] * (len(full_sa) // 3 + 1)
+    for i in range(0, len(sa)):  # shrink by 2/3
+        sa[i] = full_sa[i*3]
+
+    first = sorted(bwt_seq)  # first column of matrix
+
+    # calculate checkpoints
+    # note that these...aren't actually used because I'm not doing the LF lookups the same way
+    checkpoints = []
+    counter = dict()
+    counter['A'] = 0
+    counter['T'] = 0
+    counter['C'] = 0
+    counter['G'] = 0
+    for i in range(0, len(bwt_seq)):
+        if bwt_seq[i] != '$':
+            counter[bwt_seq[i]] += 1
+        if i % 6 == 1:  # I think this is implementing the equation in the writeup....(6*k+1)th row?
+            checkpoints.append(counter.copy())
+    print(checkpoints)
+
+
+    offsets = calc_offsets(first)
+    lf = calc_lf(bwt_seq, offsets)
+
+    # calculate array of row indices
+    init_rows = []
+    for i in range(0, len(bwt_seq)):
+        init_rows.append(i)
+
+    matches = dict()
+
+    for reads in all_reads:
+        progress_count = 0
+        for read in reads:  # align each short read
+            if progress_count % 10 == 0:
+                print("progress checkpoint:", progress_count, "out of", len(reads), "reads")
+            rev_read = read[1][::-1]
+            rows = init_rows  # contains row indices for currently valid rows
+
+            # while len(rows) > 1:
+            while len(rev_read) > 0:
+                char = rev_read[0]
+                rev_read = rev_read[1:]
+                temp_rows = []
+                for row in rows:  # find valid rows (row ends with next char)
+                    if bwt_seq[row] == char:
+                        temp_rows.append(row)
+
+                # map valid rows to rows in first
+                rows = []
+                for row in temp_rows:
+                    rows.append(lf[row])
+
+                if len(rows) < 1:
+                    # print("no matching rows")
+                    break
+
+            if len(rows) > 0:
+                # print("matching:", rows)
+                indices = []
+                for row in rows:
+                    r = row
+                    steps = 0
+                    while r % 3 != 0:
+                        # print(r)
+                        r = lf[r]
+                        steps += 1
+                    indices.append((sa[r // 3] + steps) % len(bwt_seq) + chr_offset)
+
+                if read[0] in matches:
+                    matches[read[0]].append(indices)
+                else:
+                    matches[read[0]] = [indices]
+
+            progress_count += 1
+
+    return matches
+
+
 if __name__ == '__main__':
     # testing
     # print(bwt('acaacg$'))
@@ -270,55 +354,57 @@ if __name__ == '__main__':
 
 
     # first function: bwt
-    # bwt_in = open("files/sample1.fa")
-    # bwt_in.readline()
-    # seq = bwt_in.read().replace('\n', '') + eof
-    # temp_seq = bwt(seq)
-    #
-    # bwt_out = open("files/bwtSample1.fa", 'w')
-    # bwt_out.write(">sample1\n")
-    #
-    # while len(temp_seq) > 0:
-    #     if len(temp_seq) < 70:
-    #         bwt_out.write(temp_seq + '\n')
-    #         temp_seq = ''
-    #     else:
-    #         bwt_out.write(temp_seq[0:70] + '\n')
-    #         temp_seq = temp_seq[70:]
-    #
-    # bwt_out.close()
+    bwt_in = open("files/sample1.fa")
+    bwt_in.readline()
+    seq = bwt_in.read().replace('\n', '') + eof
+    temp_seq = bwt(seq)
+
+    bwt_out = open("files/bwtSample1.fa", 'w')
+    bwt_out.write(">sample1\n")
+
+    while len(temp_seq) > 0:
+        if len(temp_seq) < 70:
+            bwt_out.write(temp_seq + '\n')
+            temp_seq = ''
+        else:
+            bwt_out.write(temp_seq[0:70] + '\n')
+            temp_seq = temp_seq[70:]
+
+    bwt_out.close()
 
 
     # second function: reverse_bwt
-    # # rev_in = open("files/bwtSample1.fa")
-    # rev_in = open("files/bwtHomoSapiens.fa")
-    # rev_in.readline()
-    # seq = rev_in.read().replace('\n', '')
-    # rev_seq = reverse_bwt(seq)[0]
-    #
-    # # rev_out = open("files/reversedSample1.fa", "w")
-    # rev_out = open("files/rBwtSample2.fa", "w")
-    # rev_out.write(">sample2\n")
-    #
-    # while len(rev_seq) > 0:
-    #     rev_out.write(rev_seq[0:70] + '\n')
-    #     rev_seq = rev_seq[70:]
-    #
-    # rev_out.close()
+    # rev_in = open("files/bwtSample1.fa")
+    rev_in = open("files/bwtHomoSapiens.fa")
+    rev_in.readline()
+    seq = rev_in.read().replace('\n', '')
+    rev_seq = reverse_bwt(seq)[0]
+
+    # rev_out = open("files/reversedSample1.fa", "w")
+    rev_out = open("files/rBwtSample2.fa", "w")
+    rev_out.write(">sample2\n")
+
+    while len(rev_seq) > 0:
+        rev_out.write(rev_seq[0:70] + '\n')
+        rev_seq = rev_seq[70:]
+
+    rev_out.close()
 
 
     # third function: full index
-    reads = [("head", "aba"), ("head2", "bba")]
-    reads2 = [("head", "aba"), ("head2", "bba")]
-    chr_bwt_seq = "abba$aa"
+    # testing
+    # reads = [("head", "ACA"), ("head2", "CCA")]
+    # reads2 = [("head", "ACA"), ("head2", "CCA")]
+    # chr_bwt_seq = "ACCA$AA"
+
     # parse fastq files for reads
-    # reads = parse_fastq("files/SRR089545_1.fq")
-    # reads2 = parse_fastq("files/SRR089545_2.fq")
+    reads = parse_fastq("files/SRR089545_1.fq")
+    reads2 = parse_fastq("files/SRR089545_2.fq")
 
     # extract chr Y BWT
-    # chry_bwt = open("files/bwtChrYnew(25M-26M).fa")
-    # chry_bwt.readline()
-    # chr_bwt_seq = chry_bwt.read().replace("\n", "")
+    chry_bwt = open("files/bwtChrYnew(25M-26M).fa")
+    chry_bwt.readline()
+    chr_bwt_seq = chry_bwt.read().replace("\n", "")
 
     # run fm indexing
     matches = full_index_fm(chr_bwt_seq, [reads, reads2])
@@ -351,3 +437,19 @@ if __name__ == '__main__':
         hybrid_out.write("\n")
 
     hybrid_out.close()
+
+
+    # fifth function: checkpointing fm
+    matches = checkpointing_fm(chr_bwt_seq, [reads, reads2])
+
+    check_out = open("files/mapping_FMCheckpointing.txt", "w")
+    check_out.write(str(len(matches)) + " out of " + str(len(reads) + len(reads2)) + " short read pairs map on chrY:20M~40M:\n")
+    for match in matches:
+        check_out.write(match + " " + str(matches[match][0]))
+        try:
+            check_out.write(" " + str(matches[match][1]))
+        except IndexError:
+            pass
+        check_out.write("\n")
+
+    check_out.close()
