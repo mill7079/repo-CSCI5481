@@ -3,6 +3,24 @@ from _collections import deque
 # end of file character appended to every sequence
 eof = "$"
 
+# print actual locations in chromosome
+chr_offset = 25000000
+
+
+# helper to parse fastq file into arrays of reads
+def parse_fastq(file):
+    fastq = open(file)
+    line_count = 0
+    reads = []
+    head = ""
+    for line in fastq:
+        if line_count % 4 == 0:
+            head = line.strip().split("/")[0]
+        elif line_count % 4 == 1:
+            reads.append((head, line.strip()))
+        line_count += 1
+
+    return reads
 
 # helper for reverseBwt
 # def lf(index, bwt, first):
@@ -86,6 +104,9 @@ def reverse_bwt(bwtSeq):
     first = sorted(bwtSeq)
     seq = bwtSeq[0]
     i = 0
+    sa = [0] * len(bwtSeq)  # suffix array
+    count = len(bwtSeq) - 1
+    sa[0] = count
 
     # calculate offsets of new characters in first column
     # offsets = dict()  # stores offset of each new character
@@ -105,16 +126,71 @@ def reverse_bwt(bwtSeq):
 
     while bwtSeq[i] != eof:
         # i = lf(i, bwtSeq, offsets)
+        count -= 1
         i = lf[i]
         seq = bwtSeq[i] + seq
+        sa[i] = count
 
-    return seq[1:]
+
+    # return seq[1:]
+    return seq[1:], sa
 
 
 # full fm index; keeps entire suffix array in memory
-def full_index_fm(bwt_seq):
-    seq = reverse_bwt(bwt_seq)  # original sequence
+def full_index_fm(bwt_seq, all_reads):
+    seq, sa = reverse_bwt(bwt_seq)  # original sequence and suffix array
     first = sorted(bwt_seq)  # first column of matrix
+
+    offsets = calc_offsets(first)
+    lf = calc_lf(bwt_seq, offsets)
+
+    # calculate array of row indices
+    init_rows = []
+    for i in range(0, len(bwt_seq)):
+        init_rows.append(i)
+
+    matches = dict()
+
+    for reads in all_reads:
+        progress_count = 0
+        for read in reads:  # align each short read
+            if progress_count % 10 == 0:
+                print("progress:", progress_count, "out of", len(reads), "reads")
+            rev_read = read[1][::-1]
+            rows = init_rows  # contains row indices for currently valid rows
+
+            # while len(rows) > 1:
+            while len(rev_read) > 0:
+                char = rev_read[0]
+                rev_read = rev_read[1:]
+                temp_rows = []
+                for row in rows:  # find valid rows (row ends with next char)
+                    if bwt_seq[row] == char:
+                        temp_rows.append(row)
+
+                # map valid rows to rows in first
+                rows = []
+                for row in temp_rows:
+                    rows.append(lf[row])
+
+                if len(rows) < 1:
+                    # print("no matching rows")
+                    break
+
+            if len(rows) > 0:
+                # print("matching:", rows)
+                indices = []
+                for row in rows:
+                    indices.append(sa[row] + chr_offset)
+
+                if read[0] in matches:
+                    matches[read[0]].append(indices)
+                else:
+                    matches[read[0]] = [indices]
+
+            progress_count += 1
+
+    return matches
 
 
 if __name__ == '__main__':
@@ -126,38 +202,68 @@ if __name__ == '__main__':
 
 
     # first function: bwt
-    bwt_in = open("files/sample1.fa")
-    bwt_in.readline()
-    seq = bwt_in.read().replace('\n', '') + eof
-    temp_seq = bwt(seq)
-
-    bwt_out = open("files/bwtSample1.fa", 'w')
-    bwt_out.write(">sample1\n")
-
-    while len(temp_seq) > 0:
-        if len(temp_seq) < 70:
-            bwt_out.write(temp_seq + '\n')
-            temp_seq = ''
-        else:
-            bwt_out.write(temp_seq[0:70] + '\n')
-            temp_seq = temp_seq[70:]
-
-    bwt_out.close()
+    # bwt_in = open("files/sample1.fa")
+    # bwt_in.readline()
+    # seq = bwt_in.read().replace('\n', '') + eof
+    # temp_seq = bwt(seq)
+    #
+    # bwt_out = open("files/bwtSample1.fa", 'w')
+    # bwt_out.write(">sample1\n")
+    #
+    # while len(temp_seq) > 0:
+    #     if len(temp_seq) < 70:
+    #         bwt_out.write(temp_seq + '\n')
+    #         temp_seq = ''
+    #     else:
+    #         bwt_out.write(temp_seq[0:70] + '\n')
+    #         temp_seq = temp_seq[70:]
+    #
+    # bwt_out.close()
 
 
     # second function: reverse_bwt
-    # rev_in = open("files/bwtSample1.fa")
-    rev_in = open("files/bwtHomoSapiens.fa")
-    rev_in.readline()
-    seq = rev_in.read().replace('\n', '')
-    rev_seq = reverse_bwt(seq)
+    # # rev_in = open("files/bwtSample1.fa")
+    # rev_in = open("files/bwtHomoSapiens.fa")
+    # rev_in.readline()
+    # seq = rev_in.read().replace('\n', '')
+    # rev_seq = reverse_bwt(seq)[0]
+    #
+    # # rev_out = open("files/reversedSample1.fa", "w")
+    # rev_out = open("files/rBwtSample2.fa", "w")
+    # rev_out.write(">sample2\n")
+    #
+    # while len(rev_seq) > 0:
+    #     rev_out.write(rev_seq[0:70] + '\n')
+    #     rev_seq = rev_seq[70:]
+    #
+    # rev_out.close()
 
-    # rev_out = open("files/reversedSample1.fa", "w")
-    rev_out = open("files/rBwtSample2.fa", "w")
-    rev_out.write(">sample2\n")
 
-    while len(rev_seq) > 0:
-        rev_out.write(rev_seq[0:70] + '\n')
-        rev_seq = rev_seq[70:]
+    # third function: full index
+    # reads = [("head", "aba"), ("head2", "bba")]
+    # reads2 = [("head", "aba"), ("head2", "bba")]
+    # chr_bwt_seq = "abba$aa"
+    # parse fastq files for reads
+    reads = parse_fastq("files/SRR089545_1.fq")
+    reads2 = parse_fastq("files/SRR089545_2.fq")
 
-    rev_out.close()
+    # extract chr Y BWT
+    chry_bwt = open("files/bwtChrYnew(25M-26M).fa")
+    chry_bwt.readline()
+    chr_bwt_seq = chry_bwt.read().replace("\n", "")
+
+    # run fm indexing
+    matches = full_index_fm(chr_bwt_seq, [reads, reads2])
+
+    # write matches to file
+    full_out = open("files/mapping_fullindexFM.txt", "w")
+    full_out.write(str(len(matches)) + " out of " + str(len(reads)) + " short read pairs map on chrY:20M~40M:\n")
+    for match in matches:
+        full_out.write(match + " " + str(matches[match][0]))
+        try:
+            full_out.write(" " + str(matches[match][1]))
+        except IndexError:
+            pass
+        full_out.write("\n")
+
+    full_out.close()
