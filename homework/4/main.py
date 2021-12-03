@@ -249,7 +249,7 @@ def hybrid_fm(bwt_seq, all_reads):
                         # print(r)
                         r = lf[r]
                         steps += 1
-                    indices.append(sa[r // 3] + steps + chr_offset)
+                    indices.append((sa[r // 3] + steps) % len(bwt_seq) + chr_offset)
 
                 if read[0] in matches:
                     matches[read[0]].append(indices)

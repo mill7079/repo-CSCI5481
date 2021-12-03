@@ -23,13 +23,21 @@ All files mentioned in the rubric are included and named appropriately; there's 
     reversedSample1.fa that's the reverse_bwt of sample1.fa for testing purposes.
 
 
+3.4
+
+The runtime for 3.1 and 3.2 should be the same, though the space usage of 3.2 is lower than that of 3.1 as
+    the program is only storing a subset of the suffix array values. In an ideal implementation, then, the
+    time usage of 3.3 is less than that of both 3.1 and 3.2, as the checkpoints make the LF lookup constant
+    time. The space complexity of 3.3 is the same as that of 3.2 (assuming the algorithm in 3.3 is based off
+    3.2) as it's still using the subset of the suffix array; adding the checkpoints presumably consumes a
+    constant amount of space, so the space usage shouldn't increase due to that.
+
+
 Issues:
 
-The indices in mapping_FMhybrid.txt are incorrect, but I couldn't resolve the issue (something with how the
-    indices relate between the suffix array and rows).
-
-Additionally, I was unsure how to implement the checkpoint version of FM indexing with the way in which I'm
+I was unsure how to implement the checkpoint version of FM indexing with the way in which I'm
     performing the LF lookup - I precalculate all of the lookup values before the algorithm begins (because
-    it's slow to an ungodly degree otherwise), so each LF is already constant time (there's no counting going
-    on in the call so including checkpoints doesn't do anything). I've included the algorithm with the
-    checkpoints calculated but it functions the same as the original version.
+    the first two indexing algorithms and the reverse bwt are slow to an ungodly degree otherwise), so each
+    LF call is already constant time (there's no counting going on in the call so including checkpoints doesn't
+    do anything). I've included the algorithm with the checkpoints calculated but it functions the same as the
+    original version.
