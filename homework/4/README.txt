@@ -41,3 +41,9 @@ I was unsure how to implement the checkpoint version of FM indexing with the way
     LF call is already constant time (there's no counting going on in the call so including checkpoints doesn't
     do anything). I've included the algorithm with the checkpoints calculated but it functions the same as the
     original version.
+
+
+Resources:
+
+https://www.cs.jhu.edu/~langmea/resources/lecture_notes/bwt_and_fm_index.pdf
+- Super helpful in helping me understand what I wasn't understanding about FM index from the class slides (i.e. the row lookups)
