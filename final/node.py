@@ -21,7 +21,7 @@ class Node:
             other.connections.remove(self)
 
     def __str__(self):
-        return "Node: " + self.seq + ", Connections: " + str(len(self.connections))
+        return "<Node: " + self.seq + ", Connections: " + str(len(self.connections)) + ">"
 
     def __repr__(self):
         return self.__str__()

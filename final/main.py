@@ -91,11 +91,17 @@ def create_star_tree(snp):
 
 # finds nxn Q matrix
 def find_q_matrix(unpaired, D):
+    # for n in D:
+    #     print(n, D[n])
+
     q = dict()
+    # print(unpaired)
     for node in unpaired:
         q[node] = dict()
         for node2 in unpaired:
-            q[node][node2] = (len(unpaired) - 2) * D[node][node2]
+            dist = D[node][node2]
+            q[node][node2] = (len(unpaired) - 2) * dist
+            # q[node][node2] = (len(unpaired) - 2) * D[node][node2]
             sum_1 = 0
             sum_2 = 0
             for nodek in unpaired:
@@ -132,8 +138,7 @@ def join(tree):
     for node in unpaired:
         D[node] = dict()
         for node2 in unpaired:
-            if node != node2:
-                D[node][node2] = dist(node, node2)
+            D[node][node2] = dist(node, node2)  # should be 0 if equal
 
     # number of iterations = n-3
     for _ in range(0, len(tree) - 3):
@@ -148,7 +153,7 @@ def join(tree):
         #         if x != y and Q[x][y] < Q[mi[0]][mi[1]]:
         #             mi[0] = x
         #             mi[1] = y
-        m_nodes = []
+        m_nodes = [unpaired[0], unpaired[1]]
         for node in unpaired:
             for node2 in unpaired:
                 if node is not node2 and Q[node][node2] < Q[m_nodes[0]][m_nodes[1]]:
@@ -182,19 +187,19 @@ def join(tree):
 
         # find distance from each of paired taxa to new node - do I actually need these...?
         # d_n1 = 0.5 * D[mi[0]][mi[1]]
-        d_n1 = 0.5 * D[n1][n2]
-        sum_f = 0
-        sum_g = 0
-        # for k in range(0, len(tree)):
-        for node in unpaired:
-            # sum_f += D[mi[0]][k]
-            sum_f += D[n1][node]
-            # sum_g += D[mi[1]][k]
-            sum_g += D[n2][node]
-
-        d_n1 += (1 / (2 * (len(tree) - 2))) * (sum_f - sum_g)
-        # d_n2 = D[mi[0]][mi[1]] - d_n1
-        d_n2 = D[n1][n2] - d_n1
+        # d_n1 = 0.5 * D[n1][n2]
+        # sum_f = 0
+        # sum_g = 0
+        # # for k in range(0, len(tree)):
+        # for node in unpaired:
+        #     # sum_f += D[mi[0]][k]
+        #     sum_f += D[n1][node]
+        #     # sum_g += D[mi[1]][k]
+        #     sum_g += D[n2][node]
+        #
+        # d_n1 += (1 / (2 * (len(tree) - 2))) * (sum_f - sum_g)
+        # # d_n2 = D[mi[0]][mi[1]] - d_n1
+        # d_n2 = D[n1][n2] - d_n1
 
         # find distance to new node from all other taxa - redo distance matrix
         # first add new values
@@ -202,6 +207,9 @@ def join(tree):
         for node in unpaired:
             if node != new_parent:
                 D[new_parent][node] = 0.5 * (D[n1][node] + D[n2][node] - D[n1][n2])
+                D[node][new_parent] = D[new_parent][node]
+
+        D[new_parent][new_parent] = 0
 
         # then remove old values from matrix
         D.pop(n1)
@@ -211,6 +219,8 @@ def join(tree):
                 D[row].pop(n1)
             if n2 in D[row]:
                 D[row].pop(n2)
+
+    # print("tree created. ", len(unpaired))
 
 
 if __name__ == '__main__':
@@ -239,8 +249,25 @@ if __name__ == '__main__':
         trees[snp] = create_star_tree(snps[snp])
     # print(trees)
 
+    # use neighbor joining algorithm to join the trees (in place)
     for tree in trees:
         join(trees[tree])
+
+    i = 0
+    for tree in trees:
+        # print(tree, trees[tree])
+        # print(print_tree(trees[tree][-1]))
+        node = trees[tree][-1]
+        acc = str(node)
+        print(node)
+        for c in node.connections:
+            print("\t", c)
+            for d in c.connections:
+                if c != d and d != node:
+                    print('\t\t', d)
+        i+=1
+        if i == 2:
+            break
 
 
 
