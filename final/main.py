@@ -21,42 +21,53 @@ def dist(n1, n2):
     return parsimony(n1.seq, n2.seq)
 
 
-# parse a file
+# parses a single file
+# returns a dictionary: key = SNP name, value = array of individual values
 def parse_file(file, num):
-    chrm = open(file)
-    headers = chrm.readline()
+    try:  # can't parse anything if there's no file to open
+        chrm = open(file)
+    except FileNotFoundError:
+        print("file", file, "not found.")
+        return None
+
+    headers = chrm.readline()  # not used but still need to read the file anyway
     data = dict()
+
     for l in chrm:
-        line = l.split(" ")
-        if line[0] not in data:
+        line = l.split(" ")  # the files look space-separated so this should work
+        if line[0] not in data:  # if new SNP, add to dictionary
             data[line[0]] = []
 
-        for i in range(11, num + 11):
+        for i in range(11, num + 11):  # append individual values for later processing
             data[line[0]].append(line[i])
 
     return data
 
 
 # combines data from files into one dictionary for tree building
+# args = list of files passed in through command line
 def combine_files(args):
     data = None
     for file in args.files:
         file_data = parse_file(file, args.num_inds)
+        if file_data is None:  # skip file if was not found in parse_file
+            continue
 
         # combine data from all files
-        if data is None:
+        if data is None:  # first file, nothing to merge
             data = file_data
-        else:
+        else:  # merge lists
             for snp in file_data:
-                if snp in data:
-                    data[snp].extend(file_data[snp])
-                else:
+                if snp in data:  # if the SNP name is present in both files...
+                    data[snp].extend(file_data[snp])  # ...then append the individuals from the new population onto the list
+                else:  # new SNP
                     data[snp] = file_data[snp]
 
     return data
 
 
 # create starting tree for each snp
+# star shape - all leaf nodes (individuals' values) connected to central node
 def create_star_tree(snp):
     tree = []
 
@@ -64,32 +75,18 @@ def create_star_tree(snp):
     for seq in snp:
         tree.append(Node(seq))
 
+    # connect leaves to center node
     center = Node()
     for node in tree:
         center.connect(node)
 
+    # center node is always last in list
     tree.append(center)
     return tree
 
 
-# finds nxn Q matrix
-# def find_q_matrix(tree, D):
-#     q = [[0 for _ in range(len(tree))] for _ in range(len(tree))]  # create nxn 2d array
-#     for i in range(len(q)):
-#         for j in range(len(q[i])):
-#             q[i][j] = (len(tree) - 2)*D[i][j]
-#             sum_i = 0
-#             sum_j = 0
-#             for k in range(0, len(tree)):
-#                 sum_i += D[i][k]
-#                 sum_j += D[j][k]
-#
-#             q[i][j] -= sum_i
-#             q[i][j] -= sum_j
-#
-#     return q
-
-# finds nxn Q matrix
+# finds nxn Q matrix used in neighbor joining algorithm
+# matrix is a 2D dictionary: keys = nodes, values = either list of distances for that node or distance value
 def find_q_matrix(unpaired, D):
     # for n in D:
     #     print(n, D[n])
@@ -99,9 +96,8 @@ def find_q_matrix(unpaired, D):
     for node in unpaired:
         q[node] = dict()
         for node2 in unpaired:
-            dist = D[node][node2]
-            q[node][node2] = (len(unpaired) - 2) * dist
-            # q[node][node2] = (len(unpaired) - 2) * D[node][node2]
+            # Q(i,j) = (n-2)*D(i,j) - sum(d(i,k)) - sum(d(j,k))
+            q[node][node2] = (len(unpaired) - 2) * D[node][node2]
             sum_1 = 0
             sum_2 = 0
             for nodek in unpaired:
@@ -116,34 +112,23 @@ def find_q_matrix(unpaired, D):
 # perform neighbor joining algorithm
 # tree is an array of nodes, initially connected in star tree pattern
 def join(tree):
-    # find pair of nodes with smallest distance
-    # disconnect those nodes, create node joining those two nodes, attach to central node
-    # aka node to which the two nodes were previously connected
-    # unpaired_nodes = len(tree) - 1  # excluding central node of star tree
-    # while unpaired_nodes <= 1:
-
-    # find all unpaired nodes
+    # find all unpaired nodes (avoid using central node because it doesn't have distance yet)
     unpaired = []
     for node in tree:
         if node.seq != "":
             unpaired.append(node)
 
-    # find initial distance matrix
-    # D = [[0 for _ in range(len(tree))] for _ in range(len(tree))]
-    # for i in range(0, len(tree)):
-    #     for j in range(0, len(tree)):
-    #         if i != j:
-    #             D[i][j] = dist(tree[i], tree[j])
+    # find initial distance matrix - 2D dictionary like Q matrix with nodes as keys
     D = dict()
     for node in unpaired:
         D[node] = dict()
         for node2 in unpaired:
             D[node][node2] = dist(node, node2)  # should be 0 if equal
 
-    # number of iterations = n-3
+    # neighbor joining algorithm - iterate through steps until tree structure is complete
+    # number of iterations = n-3 where n is number of (leaf) nodes
     for _ in range(0, len(tree) - 3):
         # find Q matrix
-        # Q = find_q_matrix(tree, D)
         Q = find_q_matrix(unpaired, D)
 
         # find pair of distinct taxa for which Q(i,j) is min
@@ -159,9 +144,9 @@ def join(tree):
                 if node is not node2 and Q[node][node2] < Q[m_nodes[0]][m_nodes[1]]:
                     m_nodes = [node, node2]
 
-        # join taxa to new node (disconnect and reconnect)
         # n1 = tree[mi[0]]
         # n2 = tree[mi[1]]
+        # set references for ease of typing
         n1 = m_nodes[0]
         n2 = m_nodes[1]
         parent = None
@@ -172,8 +157,11 @@ def join(tree):
                 parent = node
                 break
 
+        # join taxa to new node (disconnect and reconnect)
         # redo connections
         new_parent = Node()
+
+        # disconnect from old parent, reconnect to new parent (empty node), connect that new node to old parent
         n1.disconnect(parent)
         n2.disconnect(parent)
         new_parent.connect(n1)
@@ -202,7 +190,7 @@ def join(tree):
         # d_n2 = D[n1][n2] - d_n1
 
         # find distance to new node from all other taxa - redo distance matrix
-        # first add new values
+        # first add new values...
         D[new_parent] = dict()
         for node in unpaired:
             if node != new_parent:
@@ -211,7 +199,9 @@ def join(tree):
 
         D[new_parent][new_parent] = 0
 
-        # then remove old values from matrix
+        # ...then remove old values from matrix
+        # have to remove both row for each node and the nodes' entries from the other rows
+        # since I have the entire matrix defined, not just above the diagonal
         D.pop(n1)
         D.pop(n2)
         for row in D:
@@ -223,6 +213,8 @@ def join(tree):
     # print("tree created. ", len(unpaired))
 
 
+# print the tree - debugging
+# visual representation of tree - shows which nodes are paired, though still kind of hard to understand entire structure
 def print_tree(node, tabs):
     node.visited = True
     # tabs += '\t'
@@ -266,25 +258,10 @@ if __name__ == '__main__':
     for tree in trees:
         join(trees[tree])
 
-    i = 0
-    for tree in trees:
-        # node = trees[tree][-1]
-        # acc = str(node)
-        # print(node)
-        # node.visited = True
-        # for c in node.connections:
-        #     print("\t", c)
-        #     c.visited = True
-        #     for d in c.connections:
-        #         # if c != d and d != node:
-        #         if not d.visited:
-        #             print('\t\t', d)
-        # i+=1
-        # if i == 2:
-        #     break
-
-        print(print_tree(trees[tree][-1], ""))
-        break
+    # # debugging
+    # for tree in trees:
+    #     print(print_tree(trees[tree][-1], ""))
+    #     break
 
 
 
