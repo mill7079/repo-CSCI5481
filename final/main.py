@@ -1,7 +1,7 @@
 # chaos time :)
 import argparse
 from node import Node
-from math import inf
+from math import inf, log
 
 
 # calculate parsimony score between two individuals
@@ -14,11 +14,16 @@ def parsimony(s1, s2):
     return score
 
 
-# method wrapper in case I figure out a different distance method
-# but I don't know what else I'd use so...it's just passing the args to parsimony
-# takes in two nodes, passes sequences to parsimony
+# poisson corrected distance
 def dist(n1, n2):
-    return parsimony(n1.seq, n2.seq)
+    # print(parsimony(n1.seq, n2.seq))
+    p = parsimony(n1.seq, n2.seq) / len(n1.seq)
+    # if p == 0.0:
+    #     return 0
+    # print(1-p)
+    # return -log(1 - p)
+
+    return (-19/20) * log(1 - ((19/20) * p))
 
 
 # parses a single file
@@ -259,9 +264,9 @@ if __name__ == '__main__':
         join(trees[tree])
 
     # # debugging
-    # for tree in trees:
-    #     print(print_tree(trees[tree][-1], ""))
-    #     break
+    for tree in trees:
+        print(print_tree(trees[tree][-1], ""))
+        break
 
 
 
