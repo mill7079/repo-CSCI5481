@@ -223,6 +223,19 @@ def join(tree):
     # print("tree created. ", len(unpaired))
 
 
+def print_tree(node, tabs):
+    node.visited = True
+    # tabs += '\t'
+    tabs += '---'
+    acc = ''
+    for c in node.connections:
+        if not c.visited:
+            acc += '\n' + tabs + print_tree(c, tabs)
+            c.visited = True
+
+    return str(node) + acc
+
+
 if __name__ == '__main__':
     # print(parsimony("tt", "tt"))
     # print(parsimony("tt", "ta"))
@@ -255,19 +268,23 @@ if __name__ == '__main__':
 
     i = 0
     for tree in trees:
-        # print(tree, trees[tree])
-        # print(print_tree(trees[tree][-1]))
-        node = trees[tree][-1]
-        acc = str(node)
-        print(node)
-        for c in node.connections:
-            print("\t", c)
-            for d in c.connections:
-                if c != d and d != node:
-                    print('\t\t', d)
-        i+=1
-        if i == 2:
-            break
+        # node = trees[tree][-1]
+        # acc = str(node)
+        # print(node)
+        # node.visited = True
+        # for c in node.connections:
+        #     print("\t", c)
+        #     c.visited = True
+        #     for d in c.connections:
+        #         # if c != d and d != node:
+        #         if not d.visited:
+        #             print('\t\t', d)
+        # i+=1
+        # if i == 2:
+        #     break
+
+        print(print_tree(trees[tree][-1], ""))
+        break
 
 
 
