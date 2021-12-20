@@ -1,6 +1,6 @@
 # chaos time :)
 import argparse
-from node import Node
+from node import Node, alph
 from math import inf, log
 
 
@@ -44,8 +44,14 @@ def parse_file(file, num):
             data[line[0]] = []
 
         for i in range(11, num + 11):  # append individual values for later processing
-            data[line[0]].append(line[i])
+            if i < len(line):
+                data[line[0]].append(line[i])
+                if line[i][0] != line[i][1]:
+                    print(line[i])
+            else:
+                break
 
+    chrm.close()
     return data
 
 
@@ -117,6 +123,10 @@ def find_q_matrix(unpaired, D):
 # perform neighbor joining algorithm
 # tree is an array of nodes, initially connected in star tree pattern
 def join(tree):
+    all_nodes = []
+    for node in tree:
+        all_nodes.append(node)
+
     # find all unpaired nodes (avoid using central node because it doesn't have distance yet)
     unpaired = []
     for node in tree:
@@ -177,6 +187,7 @@ def join(tree):
         unpaired.remove(n1)
         unpaired.remove(n2)
         unpaired.append(new_parent)
+        all_nodes.append(new_parent)
 
         # find distance from each of paired taxa to new node - do I actually need these...?
         # d_n1 = 0.5 * D[mi[0]][mi[1]]
@@ -216,6 +227,29 @@ def join(tree):
                 D[row].pop(n2)
 
     # print("tree created. ", len(unpaired))
+    return all_nodes
+
+
+# sankoff scoring function
+def score(parent, c1, c2):
+    for i in range(0, len(parent.scores)):  # for each letter in parent
+        min_c1 = inf
+        min_c2 = inf
+        for j in range(0, len(alph)):
+            c1_score = c1.scores[j] + parsimony(alph[i], alph[j])
+            c2_score = c2.scores[j] + parsimony(alph[i], alph[j])
+
+            if c1_score < min_c1:
+                min_c1 = c1_score
+            if c2_score < min_c2:
+                min_c2 = c2_score
+
+        parent.scores[i] = min_c1 + min_c2
+
+
+# sankoff implementation
+def sankoff():
+    print(3)
 
 
 # print the tree - debugging
@@ -252,21 +286,23 @@ if __name__ == '__main__':
     snps = combine_files(args)
     # print(snps)
 
-    # create trees out of data
-    trees = dict()
-    for snp in snps:
-        # trees[snp] = create_leaves(snps[snp])
-        trees[snp] = create_star_tree(snps[snp])
-    # print(trees)
-
-    # use neighbor joining algorithm to join the trees (in place)
-    for tree in trees:
-        join(trees[tree])
-
-    # # debugging
-    for tree in trees:
-        print(print_tree(trees[tree][-1], ""))
-        break
+    # # create trees out of data
+    # trees = dict()
+    # for snp in snps:
+    #     # trees[snp] = create_leaves(snps[snp])
+    #     trees[snp] = create_star_tree(snps[snp])
+    # # print(trees)
+    #
+    # # use neighbor joining algorithm to join the trees (in place)
+    # full_trees = dict()
+    # for tree in trees:
+    #     full_trees[tree] = join(trees[tree])
+    #
+    # # # debugging
+    # for tree in trees:
+    #     print(print_tree(trees[tree][-1], ""))
+    #     print(len(full_trees[tree]))
+    #     break
 
 
 

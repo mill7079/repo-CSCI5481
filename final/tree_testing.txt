@@ -1,0 +1,28 @@
+Results of neighbor-joining algorithm
+"Node: TT" means that the sequence/individual value at that node is TT
+
+4 neighbors, paired correctly according to distance (note the changing xT value):
+
+<Node: , Connections: 2>
+---<Node: , Connections: 3>
+------<Node: bT, Connections: 1>
+------<Node: bb, Connections: 1>
+---<Node: , Connections: 3>
+------<Node: aa, Connections: 1>
+------<Node: TT, Connections: 1>
+
+<Node: , Connections: 2>
+---<Node: , Connections: 3>
+------<Node: cT, Connections: 1>
+------<Node: TT, Connections: 1>
+---<Node: , Connections: 3>
+------<Node: aa, Connections: 1>
+------<Node: bb, Connections: 1>
+
+<Node: , Connections: 2>
+---<Node: , Connections: 3>
+------<Node: aT, Connections: 1>
+------<Node: aa, Connections: 1>
+---<Node: , Connections: 3>
+------<Node: bb, Connections: 1>
+------<Node: TT, Connections: 1>

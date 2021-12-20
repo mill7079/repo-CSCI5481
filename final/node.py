@@ -1,8 +1,17 @@
+from math import inf
+
+# all possibilities for sankoff scoring...i hope
+alph = ['AA', 'TT', 'GG', 'CC', 'NN']
+
+
 class Node:
     def __init__(self, sequence=""):
         self.seq = sequence
         self.visited = False
         self.connections = []
+        self.scores = [inf, inf, inf, inf, inf]
+        if self.seq != "":
+            self.scores[alph.index(self.seq)] = 0
 
     # connect two nodes - double linking
     def connect(self, other):
