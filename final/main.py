@@ -124,6 +124,7 @@ def find_q_matrix(unpaired, D):
 # tree is an array of nodes, initially connected in star tree pattern
 def join(tree):
     all_nodes = []
+    count = 0
     for node in tree:
         all_nodes.append(node)
 
@@ -174,7 +175,9 @@ def join(tree):
 
         # join taxa to new node (disconnect and reconnect)
         # redo connections
-        new_parent = Node()
+        # new_parent = Node()
+        new_parent = Node(str(count))
+        count += 1
 
         # disconnect from old parent, reconnect to new parent (empty node), connect that new node to old parent
         n1.disconnect(parent)
@@ -188,6 +191,11 @@ def join(tree):
         unpaired.remove(n2)
         unpaired.append(new_parent)
         all_nodes.append(new_parent)
+
+        # set parent/children relationship for sankoff
+        n1.parent = new_parent
+        n2.parent = new_parent
+        new_parent.children = [n1, n2]
 
         # find distance from each of paired taxa to new node - do I actually need these...?
         # d_n1 = 0.5 * D[mi[0]][mi[1]]
@@ -231,11 +239,13 @@ def join(tree):
 
 
 # sankoff scoring function
-def score(parent, c1, c2):
+def score(parent, children):
+    c1 = children[0]
+    c2 = children[1]
     for i in range(0, len(parent.scores)):  # for each letter in parent
         min_c1 = inf
         min_c2 = inf
-        for j in range(0, len(alph)):
+        for j in range(0, len(alph)):  # for each letter in child, find minimum scores
             c1_score = c1.scores[j] + parsimony(alph[i], alph[j])
             c2_score = c2.scores[j] + parsimony(alph[i], alph[j])
 
@@ -244,12 +254,42 @@ def score(parent, c1, c2):
             if c2_score < min_c2:
                 min_c2 = c2_score
 
+        # print(min_c1, min_c2)
         parent.scores[i] = min_c1 + min_c2
+        parent.scored = True
+    #     print("parent score end loop", parent.scores[i])
+    # print("score scores" ,parent.scores)
+
+
+# returns number of unscored nodes
+# for starting sankoff
+def unscored_nodes(nodes):
+    count = 0
+    for node in nodes:
+        if not node.scored:
+            count += 1
+    return count
 
 
 # sankoff implementation
-def sankoff():
-    print(3)
+def sankoff(nodes):
+    nodes_left = unscored_nodes(nodes)
+    while nodes_left > 0:
+        for node in nodes:
+            if len(node.children) == 0 and len(node.connections) == 2:
+                node.children = node.connections
+
+            if not node.scored:  # if parent has not been computed
+                scored = True
+                for child in node.children:
+                    scored = scored and child.scored
+
+                if scored:
+                    score(node, node.children)
+                    # print("sankoff scores", node.scores)
+                    nodes_left -= 1
+                    if nodes_left == 0:  # scored last node, so find parsimony score
+                        return min(node.scores[0:len(alph)])
 
 
 # print the tree - debugging
@@ -286,23 +326,28 @@ if __name__ == '__main__':
     snps = combine_files(args)
     # print(snps)
 
-    # # create trees out of data
-    # trees = dict()
-    # for snp in snps:
-    #     # trees[snp] = create_leaves(snps[snp])
-    #     trees[snp] = create_star_tree(snps[snp])
-    # # print(trees)
-    #
-    # # use neighbor joining algorithm to join the trees (in place)
-    # full_trees = dict()
-    # for tree in trees:
-    #     full_trees[tree] = join(trees[tree])
-    #
-    # # # debugging
-    # for tree in trees:
-    #     print(print_tree(trees[tree][-1], ""))
-    #     print(len(full_trees[tree]))
-    #     break
+    # create trees out of data
+    trees = dict()
+    for snp in snps:
+        # trees[snp] = create_leaves(snps[snp])
+        trees[snp] = create_star_tree(snps[snp])
+    # print(trees)
+
+    # use neighbor joining algorithm to join the trees (in place)
+    full_trees = dict()
+    count = 0
+    print("joining trees")
+    for tree in trees:
+        full_trees[tree] = join(trees[tree])
+        count += 1
+        # print(count, "out of", len(trees), "joined")
+
+    # # debugging
+    for tree in trees:
+        # print(len(full_trees[tree]))
+        print(sankoff(full_trees[tree]))
+        print(print_tree(trees[tree][-1], ""))
+        break
 
 
 
