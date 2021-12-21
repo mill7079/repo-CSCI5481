@@ -25,10 +25,17 @@ Output:
 The output consists of three parts: progress printing while the trees are being created using the neighbor joining algorithm, so you
     know about how much longer the code will run; the normal parsimony scores and trees; and parsimony scores and trees after using
     the Nearest Neighbor Interchange algorithm. The number of score/tree pairs printed for each section depends on the command line
-    flag -t (defaults to 1). 
+    flag -t (defaults to 1).
 
 
 Testing ended up being severely restricted due to ongoing battery issues with my computer. (Additionally, I wasn't entirely sure
     what we were supposed to write in the report, so hopefully it's not too far off...)
+
+
+Resources:
+https://en.wikipedia.org/wiki/Neighbor_joining#The_algorithm
+    - Description and example walkthrough (with pictures!) of the neighbor joining algorithm
+https://en.wikipedia.org/wiki/Tree_rearrangement
+    - Picture of nearest neighbor interchange made the concept click
 
 
