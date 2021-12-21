@@ -1,4 +1,5 @@
 Results of NNI algorithm
+To see intermediate trees during a run of NNI, uncomment the print statements in the NNI code.
 
 Algorithm never came up with an optimized tree, but it did come up with different intermediate trees:
 
@@ -39,4 +40,4 @@ Tree 2:
 ------<Node: GG, Connections: 1, scores [inf, inf, 0, inf, inf], scored True
 
 
-The trees have the same structure, but the subtrees are switched in the second two. 
+The trees have the same structure, but the subtrees are switched in the second two.

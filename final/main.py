@@ -39,17 +39,18 @@ def parse_file(file, num):
     headers = chrm.readline()  # not used but still need to read the line anyway to get it out of the way
     data = dict()
 
+    # each line is a new SNP
     for l in chrm:
         line = l.split(" ")  # the files look space-separated so this should work
         if line[0] not in data:  # if new SNP, add to dictionary
             data[line[0]] = []
 
         for i in range(11, num + 11):  # append individual values for later processing
-            if i < len(line):
+            if i < len(line):  # avoids errors if user requested more values than the file contains
                 data[line[0]].append(line[i])
-                if line[i][0] != line[i][1]:
+                if line[i][0] != line[i][1]:  # testing if a file contains a mismatched pair - none of the 11 files did
                     print(line[i])
-            else:
+            else:  # if i >= len(line)
                 break
 
     chrm.close()
@@ -61,7 +62,7 @@ def parse_file(file, num):
 def combine_files(args):
     data = None
     for file in args.files:
-        file_data = parse_file(file, args.num_inds)
+        file_data = parse_file(file, args.num_inds)  # create name/values dictionary for each file
         if file_data is None:  # skip file if was not found in parse_file
             continue
 
@@ -108,6 +109,7 @@ def find_q_matrix(unpaired, D):
     for node in unpaired:
         q[node] = dict()
         for node2 in unpaired:
+            # formula from Wikipedia because it's easier to search than the textbook:
             # Q(i,j) = (n-2)*D(i,j) - sum(d(i,k)) - sum(d(j,k))
             q[node][node2] = (len(unpaired) - 2) * D[node][node2]
             sum_1 = 0
@@ -124,12 +126,12 @@ def find_q_matrix(unpaired, D):
 # perform neighbor joining algorithm
 # tree is an array of nodes, initially connected in star tree pattern
 def join(tree):
-    all_nodes = []
-    count = 0
+    all_nodes = []  # start list of all nodes in tree; returned for later use in Sankoff
+    count = 0  # number of total nodes; used for labeling internal nodes for ease of results checking
     for node in tree:
         all_nodes.append(node)
 
-    # find all unpaired nodes (avoid using central node because it doesn't have distance yet)
+    # find all unpaired nodes (avoid using central node for pairing because it doesn't have distance yet)
     unpaired = []
     for node in tree:
         if node.seq != "":
@@ -149,12 +151,6 @@ def join(tree):
         Q = find_q_matrix(unpaired, D)
 
         # find pair of distinct taxa for which Q(i,j) is min
-        # mi = [0, 0]  # min index tracker
-        # for x in range(0, len(Q)):
-        #     for y in range(0, len(Q[x])):
-        #         if x != y and Q[x][y] < Q[mi[0]][mi[1]]:
-        #             mi[0] = x
-        #             mi[1] = y
         m_nodes = [unpaired[0], unpaired[1]]
         for node in unpaired:
             for node2 in unpaired:
@@ -168,7 +164,7 @@ def join(tree):
         n2 = m_nodes[1]
         parent = None
 
-        # find shared node between two nodes - should only be one, i think
+        # find shared node between two nodes - should only be one, i think, otherwise there's a cycle
         for node in n1.connections:
             if node in n2.connections:
                 parent = node
@@ -187,13 +183,13 @@ def join(tree):
         new_parent.connect(n2)
         parent.connect(new_parent)
 
-        # remove nodes from list of unpaired, add new node
+        # remove old nodes from list of unpaired, add new node
         unpaired.remove(n1)
         unpaired.remove(n2)
         unpaired.append(new_parent)
         all_nodes.append(new_parent)
 
-        # set parent/children relationship for sankoff
+        # set parent/children relationship for use in sankoff/nni
         n1.parent = new_parent
         n2.parent = new_parent
         new_parent.children = [n1, n2]
@@ -215,7 +211,7 @@ def join(tree):
         # d_n2 = D[n1][n2] - d_n1
 
         # find distance to new node from all other taxa - redo distance matrix
-        # first add new values...
+        # first add new values (both full row and in other rows)...
         D[new_parent] = dict()
         for node in unpaired:
             if node != new_parent:
@@ -243,10 +239,10 @@ def join(tree):
 def score(parent, children):
     c1 = children[0]
     c2 = children[1]
-    for i in range(0, len(parent.scores)):  # for each letter in parent
+    for i in range(0, len(parent.scores)):  # for each letter in parent...
         min_c1 = inf
         min_c2 = inf
-        for j in range(0, len(alph)):  # for each letter in child, find minimum scores
+        for j in range(0, len(alph)):  # for each letter in child, find minimum score per child
             c1_score = c1.scores[j] + parsimony(alph[i], alph[j])
             c2_score = c2.scores[j] + parsimony(alph[i], alph[j])
 
@@ -258,12 +254,10 @@ def score(parent, children):
         # print(min_c1, min_c2)
         parent.scores[i] = min_c1 + min_c2
         parent.scored = True
-    #     print("parent score end loop", parent.scores[i])
-    # print("score scores" ,parent.scores)
 
 
 # returns number of unscored nodes
-# for starting sankoff
+# for starting sankoff - mostly just finding leaves
 def unscored_nodes(nodes):
     count = 0
     for node in nodes:
@@ -273,14 +267,11 @@ def unscored_nodes(nodes):
 
 
 # sankoff implementation
-# same iffy implementation as HW3. oh well
+# same iffy implementation as HW3...
 def sankoff(nodes):
     nodes_left = unscored_nodes(nodes)
-    while nodes_left > 0:
+    while nodes_left > 0:  # while some nodes have not yet been scored
         for node in nodes:
-            # if len(node.children) == 0 and len(node.connections) == 2:
-            #     node.children = node.connections
-
             if not node.scored:  # if parent has not been computed...
                 scored = True
                 for child in node.children:  # ...check if children have been
@@ -289,25 +280,27 @@ def sankoff(nodes):
                 if scored:  # if both are true then score the parent using the children
                     score(node, node.children)
                     nodes_left -= 1
-                    if nodes_left == 0:  # scored last node, so find parsimony score
+                    if nodes_left == 0:  # scored last node, so return parsimony score
                         return min(node.scores[0:len(alph)])
 
 
 # nearest neighbor interchange implementation
 # nodes is just a list of all nodes in the tree in no particular order
 # so this is likely not super efficient
-# num is the -i parameter, used for printing the trees
+# num is the -i parameter, only used for printing the trees
+# copies are used to avoid screwing with other data, though this might be overboard
 def nni(nodes, num):
     nodes_copy = copy.deepcopy(nodes)
     # for node in nodes_copy:
     for i in range(0, len(nodes_copy)):
         node = nodes_copy[i]
         num_children = 0
-        for child in node.children:  # can exchange subtrees if node has 4 grandchildren - simple case
+        for child in node.children:  # can exchange subtrees if node has 4 grandchildren - overly simple case
             num_children += len(child.children)
 
         # not really sure how to do this iteratively..
         if num_children == 4:
+            # create a copy of the tree for each possibility
             trees = [copy.deepcopy(nodes), copy.deepcopy(nodes), copy.deepcopy(nodes)]
             sankoffs = [-1, -1, -1]
 
@@ -315,7 +308,7 @@ def nni(nodes, num):
             sankoffs[0] = sankoff(trees[0])
             # print("Tree 0:\n", print_tree(trees[0][num], ""))
 
-            # first alternate layout
+            # first alternate layout - exchange right subtrees
             node = trees[1][i]
             c1 = node.children[0]
             c2 = node.children[1]
@@ -330,7 +323,7 @@ def nni(nodes, num):
             # print("Tree 1:\n", print_tree(trees[1][num], ""))
             # print(trees[1])
 
-            # second alternate layout
+            # second alternate layout - exchange right of one with left of the other
             node = trees[2][i]
             c1 = node.children[0]
             c2 = node.children[1]
@@ -345,6 +338,8 @@ def nni(nodes, num):
             # print("Tree 2:\n", print_tree(trees[2][num], ""))
 
             # print(sankoffs)
+            # use the optimal tree for the rest of the algorithm
+            # though in practice this...doesn't really affect anything
             nodes_copy = trees[sankoffs.index(min(sankoffs))]
 
     # return sankoff(nodes_copy)
