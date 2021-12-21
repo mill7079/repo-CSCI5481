@@ -1,17 +1,25 @@
 from math import inf
 
-# all possibilities for sankoff scoring...i hope
+# all possibilities for sankoff scoring
 alph = ['AA', 'TT', 'GG', 'CC', 'NN']
 
 
 class Node:
     def __init__(self, sequence=""):
-        self.seq = sequence
-        self.visited = False
-        self.connections = []
+        self.seq = sequence.upper()  # store sequence in uppercase to avoid conflicts
+        self.visited = False  # used for printing the tree
+        self.connections = []  # all nodes that connect to this node in tree, set during join
+
+        # useful things for sankoff
+        self.scored = False  # used for scoring during Sankoff
         self.scores = [inf, inf, inf, inf, inf]
-        if self.seq != "":
+
+        self.parent = None  # explicit refs to parent and child nodes
+        self.children = []
+
+        if self.seq != "":  # leaf node, so set score accordingly
             self.scores[alph.index(self.seq)] = 0
+            self.scored = True
 
     # connect two nodes - double linking
     def connect(self, other):
@@ -30,7 +38,8 @@ class Node:
             other.connections.remove(self)
 
     def __str__(self):
-        return "<Node: " + self.seq + ", Connections: " + str(len(self.connections)) + ">"
+        return "<Node: " + self.seq + ", Connections: " + str(len(self.connections)) #+ \
+               #", num kids " + str(len(self.children)) + ">"
 
     def __repr__(self):
         return self.__str__()
