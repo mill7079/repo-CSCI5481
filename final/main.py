@@ -36,7 +36,7 @@ def parse_file(file, num):
         print("file", file, "not found.")
         return None
 
-    headers = chrm.readline()  # not used but still need to read the file anyway
+    headers = chrm.readline()  # not used but still need to read the line anyway to get it out of the way
     data = dict()
 
     for l in chrm:
@@ -352,17 +352,6 @@ def nni(nodes, num):
 
 # print the tree - debugging
 # visual representation of tree - shows which nodes are paired, though still kind of hard to understand entire structure
-# def print_tree(node, tabs):
-#     node.visited = True
-#     # tabs += '\t'
-#     tabs += '---'
-#     acc = ''
-#     for c in node.connections:
-#         if not c.visited:
-#             acc += '\n' + tabs + print_tree(c, tabs)
-#             c.visited = True
-#
-#     return str(node) + acc
 def print_tree(node, tabs=""):
     node.visited = True
     tabs += '---'
@@ -375,12 +364,6 @@ def print_tree(node, tabs=""):
 
 
 if __name__ == '__main__':
-    # print(parsimony("tt", "tt"))
-    # print(parsimony("tt", "ta"))
-    # print(parsimony("tt", "aa"))
-    # print(parsimony("at", "ta"))
-
-    # cool shit
     # parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--num_inds", default=10, type=int)  # individuals per data file
@@ -413,8 +396,8 @@ if __name__ == '__main__':
         count += 1
         print(count, "out of", len(trees), "joined")
 
-    print('\n\nSankoff/Neighbor Joining results:\n')
     # Sankoff algorithm
+    print('\n\nSankoff/Neighbor Joining results:\n')
     i = 0
     for tree in trees:
         # print(len(full_trees[tree]))
@@ -425,8 +408,8 @@ if __name__ == '__main__':
         if i >= args.num_trees:
             break
 
-    print('\n\nNearest Neighbor Interchange results:\n')
     # Nearest Neighbor Interchange
+    print('\n\nNearest Neighbor Interchange results:\n')
     i = 0
     for tree in trees:
         # run nearest neighbor interchange on tree copies
@@ -437,5 +420,3 @@ if __name__ == '__main__':
         i += 1
         if i >= args.num_trees:
             break
-
-

@@ -4,14 +4,16 @@ Final Project - Option 3 (Parsimony Analysis)
 
 To run:
 The program includes three command-line flags, one for the number of individuals to read from each data file (-i or --num_inds),
-    one to indicate the start of the list of files (-f or --files), and one for the number of trees to be printed in the output.
-    The flags can be included in any order (though the files should all be listed together). Examples:
+    one to indicate the start of the list of files (-f or --files), and one for the number of trees to be printed in the output
+    (-t or --num_trees). The flags can be included in any order (though the files should all be listed together). Default values
+    are used for number of individuals and output trees when the flag is not included, and are 10 and 1 respectively. Examples:
 
 To run an analysis on two files with 20 individuals from each file and see 3 trees as output:
     python3 main.py -i 20 -t 3 -f data/genotypes_chrM_ASW_phase3.2_consensus.b36_fwd.txt data/genotypes_chrM_JPT_phase3.2_consensus.b36_fwd.txt
 
 To run an analysis on three files with 50 individuals from each file (with the default one result tree):
     python3 main.py --num_inds 50 --files data/genotypes_chrM_ASW_phase3.2_consensus.b36_fwd.txt data/genotypes_chrM_JPT_phase3.2_consensus.b36_fwd.txt data/genotypes_chrM_CEU_phase3.2_consensus.b36_fwd.txt
+
 
 Each file should be a path to the file (i.e. I had the files all in a directory named 'data' while testing, hence the paths). Number
     of individuals should be an integer.
