@@ -42,8 +42,8 @@ class Node:
 
     def __str__(self):
         return "<Node: " + self.seq + ", Connections: " + str(len(self.connections)) + \
-               ", num kids " + str(len(self.children)) + ">"
-            #", scores " + str(self.scores) + ", scored " + str(self.scored)
+            ", scores " + str(self.scores) + ", scored " + str(self.scored)
+               #", num kids " + str(len(self.children)) + ">"
 
     def __repr__(self):
         return self.__str__()

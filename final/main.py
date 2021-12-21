@@ -296,7 +296,8 @@ def sankoff(nodes):
 # nearest neighbor interchange implementation
 # nodes is just a list of all nodes in the tree in no particular order
 # so this is likely not super efficient
-def nni(nodes):
+# num is the -i parameter, used for printing the trees
+def nni(nodes, num):
     nodes_copy = copy.deepcopy(nodes)
     # for node in nodes_copy:
     for i in range(0, len(nodes_copy)):
@@ -312,7 +313,7 @@ def nni(nodes):
 
             # original layout
             sankoffs[0] = sankoff(trees[0])
-            print("Tree 0:\n", print_tree(trees[0][4], ""))
+            # print("Tree 0:\n", print_tree(trees[0][num], ""))
 
             # first alternate layout
             node = trees[1][i]
@@ -326,7 +327,7 @@ def nni(nodes):
                 c1.children[j].parent = c1
                 c2.children[j].parent = c2
             sankoffs[1] = sankoff(trees[1])
-            print("Tree 1:\n", print_tree(trees[1][4], ""))
+            # print("Tree 1:\n", print_tree(trees[1][num], ""))
             # print(trees[1])
 
             # second alternate layout
@@ -341,9 +342,9 @@ def nni(nodes):
                 c1.children[j].parent = c1
                 c2.children[j].parent = c2
             sankoffs[2] = sankoff(trees[2])
-            print("Tree 2:\n", print_tree(trees[2][4], ""))
+            # print("Tree 2:\n", print_tree(trees[2][num], ""))
 
-            print(sankoffs)
+            # print(sankoffs)
             nodes_copy = trees[sankoffs.index(min(sankoffs))]
 
     # return sankoff(nodes_copy)
@@ -372,6 +373,7 @@ def print_tree(node, tabs=""):
             c.visited = True
     return str(node) + acc
 
+
 if __name__ == '__main__':
     # print(parsimony("tt", "tt"))
     # print(parsimony("tt", "ta"))
@@ -383,6 +385,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--num_inds", default=10, type=int)  # individuals per data file
     parser.add_argument("-f", "--files", nargs='+')  # data files
+    parser.add_argument("-t", "--num_trees", default=1, type=int)  # number of trees to see in output
     args = parser.parse_args()
     # print(args.num_inds)
     # print(args.files)
@@ -408,28 +411,31 @@ if __name__ == '__main__':
         trees[tree][-1].children = trees[tree][-1].connections
         full_copies[tree] = copy.deepcopy(full_trees[tree])
         count += 1
-        # print(count, "out of", len(trees), "joined")
+        print(count, "out of", len(trees), "joined")
 
+    print('\n\nSankoff/Neighbor Joining results:\n')
     # Sankoff algorithm
+    i = 0
     for tree in trees:
         # print(len(full_trees[tree]))
         print("Parsimony score:", sankoff(full_trees[tree]))
-        print("Tree:\n" + print_tree(trees[tree][-1], ""))
+        print("Tree:\n" + print_tree(trees[tree][-1], ""), '\n')
         # print("Copy:\n" + print_tree(full_copies[tree][4], ""))
-        break
+        i += 1
+        if i >= args.num_trees:
+            break
 
+    print('\n\nNearest Neighbor Interchange results:\n')
     # Nearest Neighbor Interchange
+    i = 0
     for tree in trees:
-        # first need to reset the visited and scored attributes
-        # for node in full_trees[tree]:
-        #     node.scored = False
-        #     node.visited = False
-
-        # run nearest neighbor interchange on copies
+        # run nearest neighbor interchange on tree copies
         # print('\n\n', print_tree(trees[tree][-1], ""))
-        nni(full_copies[tree])
-        print("Parsimony score:", sankoff(full_copies[tree]))
-        print("Tree:\n" + print_tree(full_copies[tree][4], ""))
-        break
+        nni(full_copies[tree], args.num_inds)
+        print("NNI Parsimony score:", sankoff(full_copies[tree]))
+        print("NNI Tree:\n" + print_tree(full_copies[tree][args.num_inds*len(args.files)], ""), '\n')
+        i += 1
+        if i >= args.num_trees:
+            break
 
 
