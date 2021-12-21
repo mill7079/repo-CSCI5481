@@ -1,5 +1,6 @@
 # chaos time :)
 import argparse
+import copy
 from node import Node, alph
 from math import inf, log
 
@@ -14,7 +15,7 @@ def parsimony(s1, s2):
     return score
 
 
-# poisson corrected distance
+# Jukes-Cantor model based distance
 def dist(n1, n2):
     # print(parsimony(n1.seq, n2.seq))
     p = parsimony(n1.seq, n2.seq) / len(n1.seq)
@@ -272,40 +273,104 @@ def unscored_nodes(nodes):
 
 
 # sankoff implementation
+# same iffy implementation as HW3. oh well
 def sankoff(nodes):
     nodes_left = unscored_nodes(nodes)
     while nodes_left > 0:
         for node in nodes:
-            if len(node.children) == 0 and len(node.connections) == 2:
-                node.children = node.connections
+            # if len(node.children) == 0 and len(node.connections) == 2:
+            #     node.children = node.connections
 
-            if not node.scored:  # if parent has not been computed
+            if not node.scored:  # if parent has not been computed...
                 scored = True
-                for child in node.children:
+                for child in node.children:  # ...check if children have been
                     scored = scored and child.scored
 
-                if scored:
+                if scored:  # if both are true then score the parent using the children
                     score(node, node.children)
-                    # print("sankoff scores", node.scores)
                     nodes_left -= 1
                     if nodes_left == 0:  # scored last node, so find parsimony score
                         return min(node.scores[0:len(alph)])
 
 
+# nearest neighbor interchange implementation
+# nodes is just a list of all nodes in the tree in no particular order
+# so this is likely not super efficient
+def nni(nodes):
+    nodes_copy = copy.deepcopy(nodes)
+    # for node in nodes_copy:
+    for i in range(0, len(nodes_copy)):
+        node = nodes_copy[i]
+        num_children = 0
+        for child in node.children:  # can exchange subtrees if node has 4 grandchildren - simple case
+            num_children += len(child.children)
+
+        # not really sure how to do this iteratively..
+        if num_children == 4:
+            trees = [copy.deepcopy(nodes), copy.deepcopy(nodes), copy.deepcopy(nodes)]
+            sankoffs = [-1, -1, -1]
+
+            # original layout
+            sankoffs[0] = sankoff(trees[0])
+            print("Tree 0:\n", print_tree(trees[0][4], ""))
+
+            # first alternate layout
+            node = trees[1][i]
+            c1 = node.children[0]
+            c2 = node.children[1]
+            temp = c1.children[1]
+            c1.children[1] = c2.children[1]
+            c2.children[1] = temp
+
+            for j in range(0, len(c1.children)):
+                c1.children[j].parent = c1
+                c2.children[j].parent = c2
+            sankoffs[1] = sankoff(trees[1])
+            print("Tree 1:\n", print_tree(trees[1][4], ""))
+            # print(trees[1])
+
+            # second alternate layout
+            node = trees[2][i]
+            c1 = node.children[0]
+            c2 = node.children[1]
+            temp = c1.children[1]
+            c1.children[1] = c2.children[0]
+            c2.children[0] = temp
+
+            for j in range(0, len(c1.children)):
+                c1.children[j].parent = c1
+                c2.children[j].parent = c2
+            sankoffs[2] = sankoff(trees[2])
+            print("Tree 2:\n", print_tree(trees[2][4], ""))
+
+            print(sankoffs)
+            nodes_copy = trees[sankoffs.index(min(sankoffs))]
+
+    # return sankoff(nodes_copy)
+
+
 # print the tree - debugging
 # visual representation of tree - shows which nodes are paired, though still kind of hard to understand entire structure
-def print_tree(node, tabs):
+# def print_tree(node, tabs):
+#     node.visited = True
+#     # tabs += '\t'
+#     tabs += '---'
+#     acc = ''
+#     for c in node.connections:
+#         if not c.visited:
+#             acc += '\n' + tabs + print_tree(c, tabs)
+#             c.visited = True
+#
+#     return str(node) + acc
+def print_tree(node, tabs=""):
     node.visited = True
-    # tabs += '\t'
     tabs += '---'
     acc = ''
-    for c in node.connections:
+    for c in node.children:
         if not c.visited:
             acc += '\n' + tabs + print_tree(c, tabs)
             c.visited = True
-
     return str(node) + acc
-
 
 if __name__ == '__main__':
     # print(parsimony("tt", "tt"))
@@ -335,19 +400,36 @@ if __name__ == '__main__':
 
     # use neighbor joining algorithm to join the trees (in place)
     full_trees = dict()
+    full_copies = dict()
     count = 0
     print("joining trees")
     for tree in trees:
         full_trees[tree] = join(trees[tree])
+        trees[tree][-1].children = trees[tree][-1].connections
+        full_copies[tree] = copy.deepcopy(full_trees[tree])
         count += 1
         # print(count, "out of", len(trees), "joined")
 
-    # # debugging
+    # Sankoff algorithm
     for tree in trees:
         # print(len(full_trees[tree]))
-        print("Parsimony score:",sankoff(full_trees[tree]))
+        print("Parsimony score:", sankoff(full_trees[tree]))
         print("Tree:\n" + print_tree(trees[tree][-1], ""))
+        # print("Copy:\n" + print_tree(full_copies[tree][4], ""))
         break
 
+    # Nearest Neighbor Interchange
+    for tree in trees:
+        # first need to reset the visited and scored attributes
+        # for node in full_trees[tree]:
+        #     node.scored = False
+        #     node.visited = False
+
+        # run nearest neighbor interchange on copies
+        # print('\n\n', print_tree(trees[tree][-1], ""))
+        nni(full_copies[tree])
+        print("Parsimony score:", sankoff(full_copies[tree]))
+        print("Tree:\n" + print_tree(full_copies[tree][4], ""))
+        break
 
 
