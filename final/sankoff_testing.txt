@@ -1,0 +1,29 @@
+Results of Sankoff algorithm
+
+Examples checked by hand:
+
+python3 main.py -i 4 -f data/genotypes_chrM_ASW_phase3.2_consensus.b36_fwd.txt
+Parsimony score: 0
+Tree:
+<Node: , Connections: 2, scores [4, 0, 4, 4], scored True
+---<Node: 0, Connections: 3, scores [4, 0, 4, 4], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf], scored True
+---<Node: 1, Connections: 3, scores [4, 0, 4, 4], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf], scored True
+
+(same command but file was manually edited, so first four individuals were AA TT GG CC)
+Parsimony score: 6
+Tree:
+<Node: , Connections: 2, scores [6, 6, 6, 6], scored True
+---<Node: GG, Connections: 1, scores [inf, inf, 0, inf], scored True
+---<Node: 1, Connections: 3, scores [4, 4, 6, 4], scored True
+------<Node: 0, Connections: 3, scores [2, 2, 4, 4], scored True
+---------<Node: AA, Connections: 1, scores [0, inf, inf, inf], scored True
+---------<Node: TT, Connections: 1, scores [inf, 0, inf, inf], scored True
+------<Node: CC, Connections: 1, scores [inf, inf, inf, 0], scored True
+
+
+Scores array in these examples only includes 4 slots for ease of checking results (and no NNs were possible)
+

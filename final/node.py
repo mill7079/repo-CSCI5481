@@ -2,6 +2,7 @@ from math import inf
 
 # all possibilities for sankoff scoring
 alph = ['AA', 'TT', 'GG', 'CC', 'NN']
+# alph = ['AA', 'TT', 'GG', 'CC']
 
 
 class Node:
@@ -13,11 +14,13 @@ class Node:
         # useful things for sankoff
         self.scored = False  # used for scoring during Sankoff
         self.scores = [inf, inf, inf, inf, inf]
+        # self.scores = [inf, inf, inf, inf]
 
         self.parent = None  # explicit refs to parent and child nodes
         self.children = []
 
-        if self.seq != "":  # leaf node, so set score accordingly
+        # if self.seq != "":  # leaf node, so set score accordingly
+        if self.seq in alph:
             self.scores[alph.index(self.seq)] = 0
             self.scored = True
 
@@ -39,7 +42,8 @@ class Node:
 
     def __str__(self):
         return "<Node: " + self.seq + ", Connections: " + str(len(self.connections)) #+ \
-               #", num kids " + str(len(self.children)) + ">"
+            #", scores " + str(self.scores) + ", scored " + str(self.scored)
+               # ", num kids " + str(len(self.children)) + ">"
 
     def __repr__(self):
         return self.__str__()

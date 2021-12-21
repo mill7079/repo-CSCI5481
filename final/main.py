@@ -345,8 +345,8 @@ if __name__ == '__main__':
     # # debugging
     for tree in trees:
         # print(len(full_trees[tree]))
-        print(sankoff(full_trees[tree]))
-        print(print_tree(trees[tree][-1], ""))
+        print("Parsimony score:",sankoff(full_trees[tree]))
+        print("Tree:\n" + print_tree(trees[tree][-1], ""))
         break
 
 
