@@ -1,0 +1,42 @@
+Results of NNI algorithm
+
+Algorithm never came up with an optimized tree, but it did come up with different intermediate trees:
+
+Original tree:
+<Node: , Connections: 2, scores [4, 4, 4, 6, 6], scored True
+---<Node: 0, Connections: 3, scores [0, 4, 4, 4, 4], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+---<Node: 1, Connections: 3, scores [4, 2, 2, 4, 4], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf, inf], scored True
+------<Node: GG, Connections: 1, scores [inf, inf, 0, inf, inf], scored True
+
+
+Intermediate trees:
+Tree 0 (original tree):
+ <Node: , Connections: 2, scores [4, 4, 4, 6, 6], scored True
+---<Node: 0, Connections: 3, scores [0, 4, 4, 4, 4], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+---<Node: 1, Connections: 3, scores [4, 2, 2, 4, 4], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf, inf], scored True
+------<Node: GG, Connections: 1, scores [inf, inf, 0, inf, inf], scored True
+Tree 1:
+ <Node: , Connections: 2, scores [4, 6, 6, 8, 8], scored True
+---<Node: 0, Connections: 3, scores [2, 4, 2, 4, 4], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+------<Node: GG, Connections: 1, scores [inf, inf, 0, inf, inf], scored True
+---<Node: 1, Connections: 3, scores [2, 2, 4, 4, 4], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf, inf], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+Tree 2:
+ <Node: , Connections: 2, scores [4, 6, 6, 8, 8], scored True
+---<Node: 0, Connections: 3, scores [2, 2, 4, 4, 4], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+------<Node: TT, Connections: 1, scores [inf, 0, inf, inf, inf], scored True
+---<Node: 1, Connections: 3, scores [2, 4, 2, 4, 4], scored True
+------<Node: AA, Connections: 1, scores [0, inf, inf, inf, inf], scored True
+------<Node: GG, Connections: 1, scores [inf, inf, 0, inf, inf], scored True
+
+
+The trees have the same structure, but the subtrees are switched in the second two. 
